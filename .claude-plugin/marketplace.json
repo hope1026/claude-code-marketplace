@@ -30,6 +30,39 @@
       },
       "keywords": ["status", "monitor", "context", "cost", "rate-limit", "dashboard"],
       "category": "monitoring"
+    },
+    {
+      "name": "roblox-tools",
+      "source": "./plugins/roblox-tools",
+      "description": "Development tools for Roblox MCP servers and plugin creation including Luau scripting, Studio integration, and Rojo workflows",
+      "version": "1.0.0",
+      "author": {
+        "name": "Han-Byeol"
+      },
+      "keywords": ["roblox", "mcp", "plugin", "luau", "rojo", "studio", "game-development"],
+      "category": "game-development"
+    },
+    {
+      "name": "unity-package-tools",
+      "source": "./plugins/unity-package-tools",
+      "description": "Development tools for Unity package creation, UPM workflows, and Editor scripting",
+      "version": "1.0.0",
+      "author": {
+        "name": "Han-Byeol"
+      },
+      "keywords": ["unity", "upm", "package", "editor", "c-sharp", "game-development"],
+      "category": "game-development"
+    },
+    {
+      "name": "unity-tools",
+      "source": "./plugins/unity-tools",
+      "description": "General Unity development tools for C# scripting, prefab management, scene workflows, and debugging",
+      "version": "1.0.0",
+      "author": {
+        "name": "Han-Byeol"
+      },
+      "keywords": ["unity", "c-sharp", "prefab", "scene", "debugging", "game-development"],
+      "category": "game-development"
     }
   ]
 }

@@ -1,0 +1,11 @@
+{
+  "name": "unity-tools",
+  "description": "General Unity development tools for C# scripting, prefab management, scene workflows, and debugging",
+  "version": "1.0.0",
+  "author": {
+    "name": "Han-Byeol"
+  },
+  "homepage": "https://github.com/anthropics/claude-code-marketplace",
+  "license": "MIT",
+  "keywords": ["unity", "c-sharp", "prefab", "scene", "debugging", "game-development"]
+}

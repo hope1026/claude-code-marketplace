@@ -1,0 +1,11 @@
+{
+  "name": "unity-package-tools",
+  "description": "Development tools for Unity package creation, UPM workflows, and Editor scripting",
+  "version": "1.0.0",
+  "author": {
+    "name": "Han-Byeol"
+  },
+  "homepage": "https://github.com/anthropics/claude-code-marketplace",
+  "license": "MIT",
+  "keywords": ["unity", "upm", "package", "editor", "c-sharp", "game-development"]
+}

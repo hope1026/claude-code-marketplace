@@ -1,0 +1,11 @@
+{
+  "name": "roblox-tools",
+  "description": "Development tools for Roblox MCP servers and plugin creation including Luau scripting, Studio integration, and Rojo workflows",
+  "version": "1.0.0",
+  "author": {
+    "name": "Han-Byeol"
+  },
+  "homepage": "https://github.com/anthropics/claude-code-marketplace",
+  "license": "MIT",
+  "keywords": ["roblox", "mcp", "plugin", "luau", "rojo", "studio", "game-development"]
+}
