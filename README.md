@@ -7,7 +7,13 @@ Claude Code 플러그인 마켓플레이스입니다. 다른 프로젝트에서 
 ### GitHub에서 추가
 
 ```shell
-/plugin marketplace add owner/claude-code-marketplace
+/plugin marketplace add hope1026/claude-code-marketplace
+```
+
+### Git URL로 추가
+
+```shell
+/plugin marketplace add https://github.com/hope1026/claude-code-marketplace.git
 ```
 
 ### 로컬에서 추가
@@ -16,18 +22,16 @@ Claude Code 플러그인 마켓플레이스입니다. 다른 프로젝트에서 
 /plugin marketplace add ./path/to/claude-code-marketplace
 ```
 
-### Git URL로 추가
-
-```shell
-/plugin marketplace add https://github.com/owner/claude-code-marketplace.git
-```
-
 ## 플러그인 설치
 
 마켓플레이스를 추가한 후 플러그인을 설치합니다:
 
 ```shell
+# tools 플러그인 설치
 /plugin install tools@hanbyeol-plugins
+
+# claude-status 플러그인 설치
+/plugin install claude-status@hanbyeol-plugins
 ```
 
 또는 대화형 UI 사용:
@@ -53,6 +57,11 @@ Claude Code 플러그인 마켓플레이스입니다. 다른 프로젝트에서 
 | `ai-council` | 여러 AI (Claude, Codex, Gemini) 협업 | `/tools:ai-council` |
 | `codex-cli` | OpenAI Codex CLI 연동 | `/tools:codex-cli` |
 | `gemini-cli` | Google Gemini CLI 연동 | `/tools:gemini-cli` |
+
+**설치:**
+```shell
+/plugin install tools@hanbyeol-plugins
+```
 
 ### claude-status
 
