@@ -1,0 +1,11 @@
+{
+  "name": "task-tools",
+  "description": "Task planning and tracking tools for project management. Includes planner for requirement clarification and task breakdown, tracker for progress monitoring with hooks support.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Han-Byeol"
+  },
+  "homepage": "https://github.com/anthropics/claude-code-marketplace",
+  "license": "MIT",
+  "keywords": ["task", "planner", "tracker", "project", "management", "planning", "progress"]
+}

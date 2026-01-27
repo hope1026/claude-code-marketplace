@@ -63,6 +63,17 @@
       },
       "keywords": ["unity", "c-sharp", "prefab", "scene", "debugging", "game-development"],
       "category": "game-development"
+    },
+    {
+      "name": "task-tools",
+      "source": "./plugins/task-tools",
+      "description": "Task planning and tracking tools for project management with requirement clarification, task breakdown, subagent coordination, and progress monitoring",
+      "version": "1.0.0",
+      "author": {
+        "name": "Han-Byeol"
+      },
+      "keywords": ["task", "planner", "tracker", "project", "management", "planning", "progress", "coordination"],
+      "category": "productivity"
     }
   ]
 }

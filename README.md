@@ -41,6 +41,9 @@ After adding the marketplace, install plugins:
 
 # Install unity-package-tools plugin
 /plugin install unity-package-tools@hanbyeol-plugins
+
+# Install task-tools plugin
+/plugin install task-tools@hanbyeol-plugins
 ```
 
 Or use the interactive UI:
@@ -160,6 +163,47 @@ Development tools for Unity package creation, UPM workflows, Asset Store submiss
 
 ---
 
+### task-tools
+
+Task planning and tracking tools for project management. Includes requirement clarification, task breakdown, subagent coordination, and progress monitoring with hooks support.
+
+#### Skills
+
+| Skill | Description | Usage |
+|-------|-------------|-------|
+| `task-planner` | Plan and structure tasks from user requests. Clarifies requirements, breaks down work into actionable items, discovers available agents, and coordinates execution. | `/task-tools:task-planner` |
+| `task-tracker` | Track and update task progress. Monitors task completion, updates status with hooks support, and generates progress reports. | `/task-tools:task-tracker` |
+
+#### Agents
+
+| Agent | Description | Model |
+|-------|-------------|-------|
+| `task-manager` | Task planning and progress management agent. Handles comprehensive project planning, requirement clarification, task coordination with subagent delegation, and progress monitoring. | Sonnet |
+
+#### Cache Directory
+
+All data stored in `.task-cache/`:
+```
+.task-cache/
+├── plans/           # Immutable plan documents
+├── tasks/           # Task lists with status (single source of truth)
+├── logs/            # Activity logs (hooks write here)
+├── agents/          # Discovered available subagents
+├── handoff/         # Session handoff summaries for continuity
+└── current-plan.txt # Active plan ID
+```
+
+#### Session Handoff
+
+When context is running low, use `/task-tools:task-tracker handoff` to generate a summary for the next session. Resume with `/task-tools:task-tracker resume`.
+
+**Install:**
+```shell
+/plugin install task-tools@hanbyeol-plugins
+```
+
+---
+
 ## Directory Structure
 
 ```
@@ -198,16 +242,26 @@ claude-code-marketplace/
 │   │   └── rules/
 │   │       ├── unity-conventions.md
 │   │       └── unity-uitoolkit-style.md
-│   └── unity-package-tools/      # unity-package-tools plugin
+│   ├── unity-package-tools/      # unity-package-tools plugin
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json
+│   │   ├── skills/
+│   │   │   └── unity-package-development/
+│   │   │       ├── SKILL.md
+│   │   │       └── references/
+│   │   └── agents/
+│   │       ├── unity-package-publisher.md
+│   │       └── unity-package-reviewer.md
+│   └── task-tools/               # task-tools plugin
 │       ├── .claude-plugin/
 │       │   └── plugin.json
 │       ├── skills/
-│       │   └── unity-package-development/
-│       │       ├── SKILL.md
-│       │       └── references/
+│       │   ├── task-planner/
+│       │   │   └── SKILL.md
+│       │   └── task-tracker/
+│       │       └── SKILL.md
 │       └── agents/
-│           ├── unity-package-publisher.md
-│           └── unity-package-reviewer.md
+│           └── task-manager.md
 └── README.md
 ```
 
