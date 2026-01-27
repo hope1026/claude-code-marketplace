@@ -6,13 +6,12 @@
   },
   "metadata": {
     "description": "Claude Code plugins for development workflows, AI collaboration, and extension creation",
-    "version": "1.0.0",
-    "pluginRoot": "./plugins"
+    "version": "1.0.0"
   },
   "plugins": [
     {
       "name": "tools",
-      "source": "./tools",
+      "source": "./plugins/tools",
       "description": "Development tools including skill creator, agent creator, hooks creator, and AI collaboration skills",
       "version": "1.0.0",
       "author": {
@@ -23,7 +22,7 @@
     },
     {
       "name": "claude-status",
-      "source": "./claude-status",
+      "source": "./plugins/claude-status",
       "description": "Real-time status bar showing model, context, cost, rate limits, tools, agents, and todos",
       "version": "1.0.0",
       "author": {
