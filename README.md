@@ -49,9 +49,30 @@ Claude Code 플러그인 마켓플레이스입니다. 다른 프로젝트에서 
 | `skill-creator` | Claude Code 스킬 생성 가이드 | `/tools:skill-creator` |
 | `agent-creator` | Claude Code 에이전트 생성 가이드 | `/tools:agent-creator` |
 | `hooks-creator` | Claude Code 훅 생성 가이드 | `/tools:hooks-creator` |
+| `plugin-creator` | Claude Code 플러그인 생성 가이드 | `/tools:plugin-creator` |
 | `ai-council` | 여러 AI (Claude, Codex, Gemini) 협업 | `/tools:ai-council` |
 | `codex-cli` | OpenAI Codex CLI 연동 | `/tools:codex-cli` |
 | `gemini-cli` | Google Gemini CLI 연동 | `/tools:gemini-cli` |
+
+### claude-status
+
+실시간 상태 바를 표시하는 플러그인입니다. 설치 후 자동으로 활성화됩니다.
+
+**표시 정보:**
+- 🤖 **모델 정보** - 현재 사용 중인 모델 (Opus, Sonnet, Haiku)
+- 📊 **Context 사용량** - 현재/최대 토큰 사용량 및 프로그레스 바
+- 💰 **Cost** - 세션 비용 (USD)
+- ⏱️ **5h Session Limit** - 5시간 세션 사용량 및 리셋 시간
+- 📅 **7d Usage** - 7일 사용량 정보
+- ⚙️ **Tools** - 현재 실행 중인 도구 및 완료된 도구 수
+- 🤖 **Agent** - 실행 중인 서브에이전트 정보
+- ✓ **Todos** - 현재 작업 및 진행률
+- 📦 **Cache Hit** - 캐시 히트율
+
+**설치:**
+```shell
+/plugin install claude-status@hanbyeol-plugins
+```
 
 ## 디렉토리 구조
 
@@ -60,24 +81,27 @@ claude-code-marketplace/
 ├── .claude-plugin/
 │   └── marketplace.json      # 마켓플레이스 매니페스트
 ├── plugins/
-│   └── tools/                # tools 플러그인
+│   ├── tools/                # tools 플러그인
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json
+│   │   └── skills/
+│   │       ├── skill-creator/
+│   │       ├── agent-creator/
+│   │       ├── hooks-creator/
+│   │       ├── plugin-creator/
+│   │       ├── ai-council/
+│   │       ├── codex-cli/
+│   │       └── gemini-cli/
+│   └── claude-status/        # claude-status 플러그인
 │       ├── .claude-plugin/
-│       │   └── plugin.json   # 플러그인 매니페스트
-│       └── skills/           # 스킬들
-│           ├── skill-creator/
-│           │   ├── SKILL.md
-│           │   ├── scripts/
-│           │   └── references/
-│           ├── agent-creator/
-│           │   └── SKILL.md
-│           ├── hooks-creator/
-│           │   └── SKILL.md
-│           ├── ai-council/
-│           │   └── SKILL.md
-│           ├── codex-cli/
-│           │   └── SKILL.md
-│           └── gemini-cli/
-│               └── SKILL.md
+│       │   └── plugin.json
+│       ├── src/              # TypeScript 소스
+│       │   ├── main.ts
+│       │   ├── types.ts
+│       │   ├── lib/
+│       │   └── panels/
+│       └── out/              # 빌드 결과
+│           └── main.js
 └── README.md
 ```
 

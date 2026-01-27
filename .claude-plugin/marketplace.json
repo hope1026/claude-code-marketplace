@@ -20,6 +20,17 @@
       },
       "keywords": ["skills", "agents", "hooks", "ai-council", "codex", "gemini", "development"],
       "category": "development"
+    },
+    {
+      "name": "claude-status",
+      "source": "./claude-status",
+      "description": "Real-time status bar showing model, context, cost, rate limits, tools, agents, and todos",
+      "version": "1.0.0",
+      "author": {
+        "name": "Han-Byeol"
+      },
+      "keywords": ["status", "monitor", "context", "cost", "rate-limit", "dashboard"],
+      "category": "monitoring"
     }
   ]
 }
