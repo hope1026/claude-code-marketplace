@@ -1,6 +1,6 @@
 ---
 name: roblox-plugin-engineer
-description: Roblox Studio 플러그인(Luau) 개발 담당. plugin/ 폴더의 코드 작성, CommandHandler 구현, SSE 클라이언트, 타입 변환 작업. "플러그인", "Luau", "Roblox", "핸들러 구현" 요청 시 사용.
+description: Roblox Studio plugin (Luau) development. Handles plugin/ code, CommandHandler implementation, SSE client, and type conversion. Use for "plugin", "Luau", "Roblox", or "handler implementation" requests.
 color: "#00A2FF"
 tools: Read, Edit, Write, Bash, Glob, Grep
 model: sonnet

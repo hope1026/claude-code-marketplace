@@ -1,6 +1,6 @@
 ---
 name: ai-council
-description: Multi-AI collaboration using Codex CLI and Gemini CLI. Use when user says "AI들끼리 논의해봐", "여러 AI 의견", "다른 AI들 생각은", "AI council", or needs diverse AI perspectives for complex decisions, architecture reviews, or problem solving.
+description: Multi-AI collaboration using Codex CLI and Gemini CLI. Use when user says "AI council", "discuss among AIs", "get multiple AI opinions", "what do other AIs think", or needs diverse AI perspectives for complex decisions, architecture reviews, or problem solving.
 ---
 
 # AI Council

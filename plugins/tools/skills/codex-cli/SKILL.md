@@ -1,6 +1,6 @@
 ---
 name: codex-cli
-description: Collaborate with OpenAI Codex CLI for code tasks. Use when user says "codex에게 물어봐", "ask Codex", "Codex 리뷰해줘", "Codex 의견", "GPT한테 확인", or needs second opinion, code review, pair programming, code generation, refactoring, test writing, or bug fixing.
+description: Collaborate with OpenAI Codex CLI for code tasks. Use when user says "ask Codex", "Codex review", "Codex opinion", "check with GPT", or needs second opinion, code review, pair programming, code generation, refactoring, test writing, or bug fixing.
 ---
 
 # Codex CLI Collaboration

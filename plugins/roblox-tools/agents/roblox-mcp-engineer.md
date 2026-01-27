@@ -1,6 +1,6 @@
 ---
 name: roblox-mcp-engineer
-description: MCP 서버(TypeScript) 개발 담당. mcp-server/ 폴더의 코드 작성, 도구 구현, HTTP Bridge, 타입 변환 작업. "MCP 서버", "TypeScript", "도구 구현", "tool 추가" 요청 시 사용.
+description: MCP server (TypeScript) development. Handles mcp-server/ code, tool implementation, HTTP Bridge, and type conversion. Use for "MCP server", "TypeScript", "tool implementation", or "add tool" requests.
 color: "#3178C6"
 tools: Read, Edit, Write, Bash, Glob, Grep
 model: sonnet

@@ -53,24 +53,24 @@ Use this agent when you need to:
 
 ### 2. Manager vs Controller Review
 
-**Manager** - 전역 접근 가능한 싱글톤/static 객체:
-- 어디서든 접근 가능한 진입점
-- 앱/시스템 전체를 관리
-- 예: `AIAgentManager`, `AudioManager`, `SceneManager`
+**Manager** - Globally accessible singleton/static object:
+- Entry point accessible from anywhere
+- Manages entire app/system
+- Examples: `AIAgentManager`, `AudioManager`, `SceneManager`
 
-**Controller** - 특정 클래스 내부에서 기능을 제어하는 객체:
-- Manager나 다른 클래스의 멤버 변수로 존재
-- 특정 영역의 로직을 담당
-- 예: `ContextController`, `SessionController`, `MessageController`
+**Controller** - Object that controls functionality within a specific class:
+- Exists as a member variable of Manager or other classes
+- Handles logic for a specific domain
+- Examples: `ContextController`, `SessionController`, `MessageController`
 
 **Required Pattern:**
 ```csharp
-// Manager: 전역 진입점
+// Manager: Global entry point
 public class AIAgentManager
 {
     public static AIAgentManager Instance { get; }
 
-    // Controller: 내부 기능 제어
+    // Controller: Internal functionality control
     private readonly ContextController _contextController;
     private readonly SessionController _sessionController;
 }

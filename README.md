@@ -1,96 +1,173 @@
 # Claude Code Marketplace
 
-Claude Code 플러그인 마켓플레이스입니다. 다른 프로젝트에서 이 마켓플레이스를 추가하고 플러그인을 설치할 수 있습니다.
+A plugin marketplace for Claude Code. Add this marketplace to your projects and install plugins to extend Claude Code's capabilities.
 
-## 마켓플레이스 추가 방법
+## Adding the Marketplace
 
-### GitHub에서 추가
+### From GitHub
 
 ```shell
 /plugin marketplace add hope1026/claude-code-marketplace
 ```
 
-### Git URL로 추가
+### From Git URL
 
 ```shell
 /plugin marketplace add https://github.com/hope1026/claude-code-marketplace.git
 ```
 
-### 로컬에서 추가
+### From Local Path
 
 ```shell
 /plugin marketplace add ./path/to/claude-code-marketplace
 ```
 
-## 플러그인 설치
+## Installing Plugins
 
-마켓플레이스를 추가한 후 플러그인을 설치합니다:
+After adding the marketplace, install plugins:
 
 ```shell
-# tools 플러그인 설치
+# Install tools plugin
 /plugin install tools@hanbyeol-plugins
 
-# claude-status 플러그인 설치
+# Install claude-status plugin
 /plugin install claude-status@hanbyeol-plugins
+
+# Install roblox-tools plugin
+/plugin install roblox-tools@hanbyeol-plugins
+
+# Install unity-tools plugin
+/plugin install unity-tools@hanbyeol-plugins
+
+# Install unity-package-tools plugin
+/plugin install unity-package-tools@hanbyeol-plugins
 ```
 
-또는 대화형 UI 사용:
+Or use the interactive UI:
 
 ```shell
 /plugin
 ```
 
-그 후 **Discover** 탭에서 플러그인을 선택하고 설치합니다.
+Then select plugins from the **Discover** tab.
 
-## 사용 가능한 플러그인
+---
+
+## Available Plugins
 
 ### tools
 
-개발 도구 모음으로 다음 스킬들을 포함합니다:
+Development tools for creating Claude Code extensions including skills, agents, hooks, and AI collaboration workflows.
 
-| 스킬 | 설명 | 사용 예시 |
-|------|------|----------|
-| `skill-creator` | Claude Code 스킬 생성 가이드 | `/tools:skill-creator` |
-| `agent-creator` | Claude Code 에이전트 생성 가이드 | `/tools:agent-creator` |
-| `hooks-creator` | Claude Code 훅 생성 가이드 | `/tools:hooks-creator` |
-| `plugin-creator` | Claude Code 플러그인 생성 가이드 | `/tools:plugin-creator` |
-| `ai-council` | 여러 AI (Claude, Codex, Gemini) 협업 | `/tools:ai-council` |
-| `codex-cli` | OpenAI Codex CLI 연동 | `/tools:codex-cli` |
-| `gemini-cli` | Google Gemini CLI 연동 | `/tools:gemini-cli` |
+#### Skills
 
-**설치:**
+| Skill | Description | Usage |
+|-------|-------------|-------|
+| `skill-creator` | Guide for creating Claude Code skills | `/tools:skill-creator` |
+| `agent-creator` | Guide for creating Claude Code agents | `/tools:agent-creator` |
+| `hooks-creator` | Guide for creating Claude Code hooks | `/tools:hooks-creator` |
+| `plugin-creator` | Guide for creating Claude Code plugins | `/tools:plugin-creator` |
+| `ai-council` | Multi-AI collaboration (Claude, Codex, Gemini) | `/tools:ai-council` |
+| `codex-cli` | OpenAI Codex CLI integration | `/tools:codex-cli` |
+| `gemini-cli` | Google Gemini CLI integration | `/tools:gemini-cli` |
+
+**Install:**
 ```shell
 /plugin install tools@hanbyeol-plugins
 ```
 
+---
+
 ### claude-status
 
-실시간 상태 바를 표시하는 플러그인입니다. 설치 후 자동으로 활성화됩니다.
+Real-time status bar plugin that displays useful information during your Claude Code session. Automatically activates after installation.
 
-**표시 정보:**
-- 🤖 **모델 정보** - 현재 사용 중인 모델 (Opus, Sonnet, Haiku)
-- 📊 **Context 사용량** - 현재/최대 토큰 사용량 및 프로그레스 바
-- 💰 **Cost** - 세션 비용 (USD)
-- ⏱️ **5h Session Limit** - 5시간 세션 사용량 및 리셋 시간
-- 📅 **7d Usage** - 7일 사용량 정보
-- ⚙️ **Tools** - 현재 실행 중인 도구 및 완료된 도구 수
-- 🤖 **Agent** - 실행 중인 서브에이전트 정보
-- ✓ **Todos** - 현재 작업 및 진행률
-- 📦 **Cache Hit** - 캐시 히트율
+**Displayed Information:**
+- **Model** - Current model (Opus, Sonnet, Haiku)
+- **Context** - Token usage with progress bar
+- **Cost** - Session cost (USD)
+- **5h Session Limit** - 5-hour session usage and reset time
+- **7d Usage** - 7-day usage statistics
+- **Tools** - Currently running and completed tools
+- **Agent** - Running subagent information
+- **Todos** - Current tasks and progress
+- **Cache Hit** - Cache hit rate
 
-**설치:**
+**Install:**
 ```shell
 /plugin install claude-status@hanbyeol-plugins
 ```
 
-## 디렉토리 구조
+---
+
+### roblox-tools
+
+Development tools for Roblox MCP servers and Studio plugin creation. Includes Luau scripting patterns, Studio integration, and Rojo workflows.
+
+#### Agents
+
+| Agent | Description | Model |
+|-------|-------------|-------|
+| `roblox-mcp-engineer` | MCP server (TypeScript) development. Handles mcp-server/ code, tool implementation, HTTP Bridge, and type conversion. Use for "MCP server", "TypeScript", or "tool implementation" requests. | Sonnet |
+| `roblox-plugin-engineer` | Roblox Studio plugin (Luau) development. Handles plugin/ code, CommandHandler implementation, SSE client, and type conversion. Use for "plugin", "Luau", or "handler implementation" requests. | Sonnet |
+
+**Install:**
+```shell
+/plugin install roblox-tools@hanbyeol-plugins
+```
+
+---
+
+### unity-tools
+
+General Unity development tools for C# scripting, prefab management, scene workflows, and debugging.
+
+#### Agents
+
+| Agent | Description | Model |
+|-------|-------------|-------|
+| `unity-engineer` | Unity package development engineer for implementing C# code following strict coding conventions. Use for Runtime/Editor code, creating providers, implementing features, or fixing bugs. | Opus |
+| `unity-code-reviewer` | Unity C# code reviewer that validates code against project conventions, naming rules, folder structure, and best practices. Use after code changes to ensure compliance. | Sonnet |
+
+**Install:**
+```shell
+/plugin install unity-tools@hanbyeol-plugins
+```
+
+---
+
+### unity-package-tools
+
+Development tools for Unity package creation, UPM workflows, Asset Store submission, and Editor scripting.
+
+#### Skills
+
+| Skill | Description | Usage |
+|-------|-------------|-------|
+| `unity-package-development` | Guide for Unity package development and maintenance. Use for UPM packages, package.json manifests, versioning, documentation, testing, publishing (including Asset Store), and distribution. | `/unity-package-tools:unity-package-development` |
+
+#### Agents
+
+| Agent | Description | Model |
+|-------|-------------|-------|
+| `unity-package-publisher` | Unity package publishing assistant for documentation, changelogs, and release preparation. Use when preparing packages for UPM or Asset Store distribution. | Sonnet |
+| `unity-package-reviewer` | Unity package validation and compliance checker. Verifies structure, versioning, documentation, marketing assets, and guideline compliance for UPM or Asset Store submission. | Sonnet |
+
+**Install:**
+```shell
+/plugin install unity-package-tools@hanbyeol-plugins
+```
+
+---
+
+## Directory Structure
 
 ```
 claude-code-marketplace/
 ├── .claude-plugin/
-│   └── marketplace.json      # 마켓플레이스 매니페스트
+│   └── marketplace.json          # Marketplace manifest
 ├── plugins/
-│   ├── tools/                # tools 플러그인
+│   ├── tools/                    # tools plugin
 │   │   ├── .claude-plugin/
 │   │   │   └── plugin.json
 │   │   └── skills/
@@ -101,27 +178,47 @@ claude-code-marketplace/
 │   │       ├── ai-council/
 │   │       ├── codex-cli/
 │   │       └── gemini-cli/
-│   └── claude-status/        # claude-status 플러그인
+│   ├── claude-status/            # claude-status plugin
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json
+│   │   ├── src/                  # TypeScript source
+│   │   └── out/                  # Build output
+│   ├── roblox-tools/             # roblox-tools plugin
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json
+│   │   └── agents/
+│   │       ├── roblox-mcp-engineer.md
+│   │       └── roblox-plugin-engineer.md
+│   ├── unity-tools/              # unity-tools plugin
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json
+│   │   ├── agents/
+│   │   │   ├── unity-engineer.md
+│   │   │   └── unity-code-reviewer.md
+│   │   └── rules/
+│   │       ├── unity-conventions.md
+│   │       └── unity-uitoolkit-style.md
+│   └── unity-package-tools/      # unity-package-tools plugin
 │       ├── .claude-plugin/
 │       │   └── plugin.json
-│       ├── src/              # TypeScript 소스
-│       │   ├── main.ts
-│       │   ├── types.ts
-│       │   ├── lib/
-│       │   └── panels/
-│       └── out/              # 빌드 결과
-│           └── main.js
+│       ├── skills/
+│       │   └── unity-package-development/
+│       │       ├── SKILL.md
+│       │       └── references/
+│       └── agents/
+│           ├── unity-package-publisher.md
+│           └── unity-package-reviewer.md
 └── README.md
 ```
 
-## 자체 플러그인 추가하기
+## Creating Your Own Plugin
 
-1. `plugins/` 디렉토리에 새 플러그인 폴더 생성
-2. `.claude-plugin/plugin.json` 매니페스트 추가
-3. 스킬은 `skills/` 폴더에, 에이전트는 `agents/` 폴더에 배치
-4. `.claude-plugin/marketplace.json`에 플러그인 항목 추가
+1. Create a new plugin folder in `plugins/`
+2. Add `.claude-plugin/plugin.json` manifest
+3. Place skills in `skills/` folder, agents in `agents/` folder
+4. Register the plugin in `.claude-plugin/marketplace.json`
 
-### 플러그인 매니페스트 예시
+### Plugin Manifest Example
 
 ```json
 {
@@ -134,24 +231,24 @@ claude-code-marketplace/
 }
 ```
 
-### 마켓플레이스에 플러그인 등록
+### Registering Plugin in Marketplace
 
-`.claude-plugin/marketplace.json`의 `plugins` 배열에 추가:
+Add to the `plugins` array in `.claude-plugin/marketplace.json`:
 
 ```json
 {
   "name": "my-plugin",
-  "source": "./my-plugin",
+  "source": "./plugins/my-plugin",
   "description": "My awesome plugin description"
 }
 ```
 
-## 참고 문서
+## References
 
-- [플러그인 검색 및 설치](https://code.claude.com/docs/ko/discover-plugins)
-- [플러그인 마켓플레이스 생성](https://code.claude.com/docs/ko/plugin-marketplaces)
-- [플러그인 레퍼런스](https://code.claude.com/docs/ko/plugins-reference)
+- [Discover and Install Plugins](https://code.claude.com/docs/en/discover-plugins)
+- [Create Plugin Marketplaces](https://code.claude.com/docs/en/plugin-marketplaces)
+- [Plugin Reference](https://code.claude.com/docs/en/plugins-reference)
 
-## 라이선스
+## License
 
 MIT License
