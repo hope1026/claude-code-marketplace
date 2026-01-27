@@ -1,0 +1,11 @@
+{
+  "name": "tools",
+  "description": "Development tools for creating skills, agents, hooks, and AI collaboration workflows",
+  "version": "1.0.0",
+  "author": {
+    "name": "Han-Byeol"
+  },
+  "homepage": "https://github.com/anthropics/claude-code-marketplace",
+  "license": "MIT",
+  "keywords": ["skills", "agents", "hooks", "ai-council", "codex", "gemini", "development"]
+}

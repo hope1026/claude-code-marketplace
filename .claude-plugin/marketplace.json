@@ -1,0 +1,25 @@
+{
+  "name": "hanbyeol-plugins",
+  "owner": {
+    "name": "Han-Byeol",
+    "email": "han-byeol@example.com"
+  },
+  "metadata": {
+    "description": "Claude Code plugins for development workflows, AI collaboration, and extension creation",
+    "version": "1.0.0",
+    "pluginRoot": "./plugins"
+  },
+  "plugins": [
+    {
+      "name": "tools",
+      "source": "./tools",
+      "description": "Development tools including skill creator, agent creator, hooks creator, and AI collaboration skills",
+      "version": "1.0.0",
+      "author": {
+        "name": "Han-Byeol"
+      },
+      "keywords": ["skills", "agents", "hooks", "ai-council", "codex", "gemini", "development"],
+      "category": "development"
+    }
+  ]
+}
