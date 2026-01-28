@@ -16,6 +16,8 @@ Phase 1: Clarify Requirements
    ↓ Ask questions to understand agent purpose
 Phase 2: Create Agent
    ↓ Generate agent markdown with proper structure
+Phase 2.5: Skill Duplication Check
+   ↓ Verify no skill content is duplicated in agent
 Phase 3: Test & Verify
    ↓ Test delegation and behavior
 Phase 4: User Confirmation
@@ -205,6 +207,99 @@ Implement API endpoints. Follow the conventions from preloaded skills.
 
 ---
 
+## Phase 2.5: Skill Duplication Check
+
+> **CRITICAL**: When an agent uses skills, the agent file must NOT duplicate skill content.
+
+### Why This Matters
+
+- Skills are automatically injected into agent context at startup
+- Duplicating skill content bloats the agent and causes inconsistencies
+- Updates to skills won't reflect if content is hardcoded in agent
+
+### Verification Checklist
+
+Before finalizing an agent that uses skills, verify:
+
+| Check | Action |
+|-------|--------|
+| ✅ Skills listed in frontmatter only | `skills:` field contains skill names |
+| ✅ Brief reference in body | Only mention "Follow the conventions from preloaded skills" |
+| ❌ No copied skill content | Don't paste workflow, guidelines, or examples from skills |
+| ❌ No duplicate instructions | Don't repeat what the skill already explains |
+
+### How to Reference Skills in Agent Body
+
+**✅ CORRECT - Brief reference:**
+```markdown
+---
+name: roblox-developer
+skills:
+  - roblox-templates
+  - roblox-mcp-guide
+---
+
+You are a Roblox game developer.
+
+Use the preloaded skills for:
+- Asset IDs and templates (roblox-templates)
+- MCP tool usage patterns (roblox-mcp-guide)
+
+Focus on game logic and user experience.
+```
+
+**❌ WRONG - Duplicated content:**
+```markdown
+---
+name: roblox-developer
+skills:
+  - roblox-templates
+---
+
+You are a Roblox game developer.
+
+## Available Assets  <!-- ❌ This is in the skill! -->
+- Zombie: 12345678
+- Skeleton: 23456789
+- ...
+
+## How to Insert Models  <!-- ❌ This is in the skill! -->
+Use insert_model with assetId...
+```
+
+### Verification Script
+
+Run this check before finalizing:
+
+```bash
+# Check for potential duplication
+AGENT_FILE=".claude/agents/{agent-name}.md"
+SKILLS=$(grep -A10 "^skills:" "$AGENT_FILE" | grep "^\s*-" | sed 's/.*- //')
+
+for SKILL in $SKILLS; do
+  SKILL_FILE=$(find .claude/skills -name "*.md" | xargs grep -l "^name: $SKILL" | head -1)
+  if [ -n "$SKILL_FILE" ]; then
+    # Check for content overlap (simplified)
+    SKILL_LINES=$(wc -l < "$SKILL_FILE")
+    AGENT_LINES=$(wc -l < "$AGENT_FILE")
+    if [ "$AGENT_LINES" -gt 50 ]; then
+      echo "⚠️  Warning: Agent has $AGENT_LINES lines. Check for skill duplication."
+    fi
+  fi
+done
+```
+
+### Quick Reference Table
+
+| Agent needs... | In frontmatter | In body |
+|----------------|----------------|---------|
+| Skill knowledge | `skills: [skill-name]` | "Follow preloaded skill guidelines" |
+| Skill workflow | `skills: [skill-name]` | "Use workflow from skill" |
+| Skill examples | `skills: [skill-name]` | Don't copy examples |
+| Custom additions | - | Only agent-specific content |
+
+---
+
 ## Phase 3: Test & Verify
 
 After creating the agent:
@@ -231,6 +326,7 @@ Check that:
 - [ ] Tool restrictions work correctly
 - [ ] System prompt guides behavior as expected
 - [ ] Hooks execute properly (if included)
+- [ ] No skill content duplicated in agent body (if using skills)
 
 ### 3.4 Test Hooks (if applicable)
 
@@ -260,12 +356,14 @@ After testing, report to user:
 📋 Description: {description}
 🔧 Tools: {tools or "All (inherited)"}
 🤖 Model: {model}
+📚 Skills: {skills or "None"}
 
 Test Results:
 - [ ] Agent appears in /agents list
 - [ ] Delegation works correctly
 - [ ] Tool restrictions enforced
 - [ ] Hooks execute properly (if applicable)
+- [ ] No skill content duplicated (if using skills)
 
 Would you like to:
 1. Make any modifications
@@ -367,20 +465,30 @@ fi
 exit 0
 ```
 
-### Agent with Preloaded Skills
+### Agent with Preloaded Skills (No Duplication)
 
 ```markdown
 ---
 name: api-developer
 description: Implement API endpoints following team conventions.
 skills:
-  - api-conventions
-  - error-handling-patterns
+  - api-conventions      # Provides: endpoint naming, request/response formats
+  - error-handling-patterns  # Provides: error codes, exception handling
 ---
 
-Implement API endpoints. Follow the conventions and patterns
-from the preloaded skills.
+You are an API developer. Implement endpoints following team standards.
+
+Use preloaded skills for:
+- Endpoint conventions (api-conventions skill)
+- Error handling patterns (error-handling-patterns skill)
+
+Focus on business logic implementation. Do NOT redefine conventions
+already specified in the skills.
 ```
+
+> **Note**: The agent body is minimal because all detailed guidelines
+> are in the preloaded skills. This prevents duplication and ensures
+> updates to skills automatically apply to the agent.
 
 ---
 
