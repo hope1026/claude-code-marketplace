@@ -16,13 +16,17 @@ codex --version
 gemini --version
 ```
 
-## AI Strengths
+## AI Strengths & Models
 
-| AI | Strengths | Best For |
-|----|-----------|----------|
-| **Claude** | Nuanced reasoning, safety, detailed explanations | Complex analysis, edge cases |
-| **Codex** (OpenAI) | Code generation, practical solutions | Implementation details, patterns |
-| **Gemini** (Google) | Large context, security review | Codebase-wide analysis, architecture |
+| AI | Model (Planning) | Model (General) | Strengths |
+|----|------------------|-----------------|-----------|
+| **Claude** | claude-opus-4-5 | claude-sonnet-4 | Nuanced reasoning, safety, detailed explanations |
+| **Codex** (OpenAI) | gpt-5.2-codex | gpt-5-codex-mini | Code generation, practical solutions, long-horizon tasks |
+| **Gemini** (Google) | gemini-3-pro | gemini-3-flash | Large context (1M), security review, agentic coding |
+
+### Model Selection Guidelines
+- **Planning/Architecture/Problem-solving**: Use top-tier models for best reasoning
+- **General tasks/Quick queries**: Use faster models for efficiency
 
 ## Workflow
 
@@ -31,14 +35,14 @@ Clearly state the decision/problem and identify relevant context files.
 
 ### 2. Gather Perspectives
 
-**Query Codex:**
+**Query Codex (use gpt-5.2-codex for complex decisions):**
 ```bash
 codex exec "What's your recommended approach for [problem]? Focus on implementation trade-offs." --context-file <file>
 ```
 
-**Query Gemini:**
+**Query Gemini (use gemini-3-pro for architecture decisions):**
 ```bash
-gemini -m gemini-2.5-pro "Analyze from architecture and security standpoints: [problem]. Context: $(cat <file>)"
+gemini -m gemini-3-pro "Analyze from architecture and security standpoints: [problem]. Context: $(cat <file>)"
 ```
 
 ### 3. Synthesize
@@ -81,25 +85,31 @@ gemini -m gemini-2.5-pro "Analyze from architecture and security standpoints: [p
 
 ## Examples
 
-### Architecture Decision
+### Architecture Decision (use top-tier models)
 ```bash
-# Get Codex's view
+# Get Codex's view (gpt-5.2-codex default for complex tasks)
 codex exec "Should we use Redux or Context API? $(cat src/App.tsx | head -50)"
 
 # Get Gemini's view
-gemini --include-directories ./src "Recommend Redux vs Context API with rationale"
+gemini -m gemini-3-pro --include-directories ./src "Recommend Redux vs Context API with rationale"
 ```
 
-### Code Review
+### Code Review (general models fine)
 ```bash
-codex exec "Review for bugs and improvements" --context-file src/utils.ts
-gemini -m gemini-2.5-pro "Security and performance review: $(cat src/utils.ts)"
+codex exec --model gpt-5-codex-mini "Review for bugs and improvements" --context-file src/utils.ts
+gemini -m gemini-3-flash "Security and performance review: $(cat src/utils.ts)"
 ```
 
 ### Bug Investigation
 ```bash
 codex exec "What could cause this error? $(cat error.log | tail -30)"
 gemini "Analyze potential root causes: $(cat error.log | tail -30)"
+```
+
+### Deep Reasoning (for complex problems)
+```bash
+# Use Gemini's deep thinking for iterative design or research
+gemini -m gemini-2.5-deep-think "Design optimal solution for [complex problem]"
 ```
 
 ## Guidelines

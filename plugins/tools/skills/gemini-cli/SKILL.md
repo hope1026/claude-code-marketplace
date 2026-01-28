@@ -14,9 +14,31 @@ Collaborate with Google Gemini AI using the Gemini CLI. Gemini excels at large-s
 gemini "<question>"
 ```
 
-### Specify Model
+### Model Selection
+
+| Model | Use Case | Speed |
+|-------|----------|-------|
+| `gemini-3-pro` | Complex reasoning, planning | Slower |
+| `gemini-3-flash` | General coding tasks (default) | Fast |
+| `gemini-2.5-deep-think` | Deep reasoning, math, science | Slowest |
+| `gemini-2.5-pro` | Large context analysis (1M tokens) | Medium |
+| `gemini-2.5-flash` | Quick tasks, high throughput | Fast |
+| `gemini-2.5-flash-lite` | Simple tasks, lowest cost | Fastest |
+
+**Model Selection Guidelines:**
+- **Planning/Problem-solving**: Use `gemini-3-pro` or `gemini-2.5-deep-think`
+- **General tasks**: Use `gemini-3-flash` (default)
+- **Large codebase**: Use `gemini-2.5-pro` (1M token context)
+
 ```bash
-gemini -m gemini-2.5-pro "<complex analysis question>"
+# Complex analysis
+gemini -m gemini-3-pro "<complex architecture question>"
+
+# Deep reasoning (iterative design, research)
+gemini -m gemini-2.5-deep-think "<deep reasoning question>"
+
+# Quick general query (default)
+gemini "<general question>"
 ```
 
 ### Query with Code File
@@ -35,7 +57,7 @@ gemini --web-search "<latest library trends>"
 ```
 
 ### Key Options
-- `-m, --model`: Select model (gemini-2.5-pro, gemini-2.5-flash, etc.)
+- `-m, --model`: Select model (gemini-3-pro, gemini-3-flash, gemini-2.5-deep-think, etc.)
 - `-i, --interactive`: Interactive mode for multi-turn conversations
 - `--include-directories`: Directories to include in analysis context
 - `--approval-mode yolo`: Auto-approve file modifications (use with caution)
@@ -55,7 +77,7 @@ gemini --web-search "<latest library trends>"
 
 ### Security Review
 ```bash
-gemini -m gemini-2.5-pro "Analyze security vulnerabilities in this code: $(cat src/auth.ts)"
+gemini -m gemini-3-pro "Analyze security vulnerabilities in this code: $(cat src/auth.ts)"
 ```
 
 ### Performance Optimization

@@ -5,7 +5,7 @@ description: Collaborate with OpenAI Codex CLI for code tasks. Use when user say
 
 # Codex CLI Collaboration
 
-Collaborate with OpenAI GPT-5-Codex via Codex CLI for code review, second opinions, and pair programming.
+Collaborate with OpenAI GPT-5.2-Codex via Codex CLI for code review, second opinions, and pair programming.
 
 ## Prerequisites Check
 
@@ -50,11 +50,22 @@ codex exec "<task>" --context-file <file>
 ```
 
 ### Model Selection
-- `gpt-5-codex`: Complex tasks (default)
-- `gpt-5-codex-mini`: Simple/fast queries
-- `gpt-5`: General reasoning
+
+| Model | Use Case | Speed |
+|-------|----------|-------|
+| `gpt-5.2-codex` | Complex tasks, architecture, planning (default) | Slower |
+| `gpt-5-codex` | Standard coding tasks | Medium |
+| `gpt-5-codex-mini` | Simple queries, quick fixes | Fast |
+
+**Model Selection Guidelines:**
+- **Planning/Problem-solving**: Use `gpt-5.2-codex` (best reasoning)
+- **General tasks**: Use default or `gpt-5-codex-mini` for speed
 
 ```bash
+# Complex analysis (default model)
+codex exec "<complex architecture question>"
+
+# Quick simple query
 codex exec --model gpt-5-codex-mini "<simple question>"
 ```
 
