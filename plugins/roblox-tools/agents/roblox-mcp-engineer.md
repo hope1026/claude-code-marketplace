@@ -3,7 +3,7 @@ name: roblox-mcp-engineer
 description: MCP server (TypeScript) development. Handles mcp-server/ code, tool implementation, HTTP Bridge, and type conversion. Use for "MCP server", "TypeScript", "tool implementation", or "add tool" requests.
 color: "#3178C6"
 tools: Read, Edit, Write, Bash, Glob, Grep
-model: sonnet
+model: inherit
 allowedTools:
   - Read
   - Edit
@@ -53,6 +53,47 @@ AI Agent ─── stdio (JSON-RPC 2.0) ──→ MCP Server ─── HTTP/SSE 
 3. Implement requested functionality
 4. Ensure TypeScript type safety
 5. Test with `npm run build`
+6. **If adding a new tool**: Update documentation (see below)
+
+## Documentation Update (Required for New Tools)
+
+When adding a new MCP tool, you MUST also update the documentation:
+
+**File to update:** `mcp-server/marketplace/plugins/weppy-roblox-mcp/skills/roblox-mcp-guide/SKILL.md`
+
+### Steps:
+1. Find the appropriate category table in the skill file
+2. Add the new tool entry with: Tool name, Description, Example usage
+3. If creating a new category, add a new section
+
+### Documentation Format:
+```markdown
+| `tool_name` | Brief description | `{ param1: "value", param2: 123 }` |
+```
+
+### Example:
+If you add `get_mesh_data` tool to `instance-tools.ts`:
+
+```markdown
+## Instance Tools table:
+| `get_mesh_data` | Get mesh geometry data | `{ path: "workspace.MeshPart" }` |
+```
+
+### Categories in roblox-mcp-guide:
+- Instance Tools
+- Property Tools
+- Attribute Tools
+- Script Tools
+- Search Tools
+- Selection Tools
+- Tag Tools
+- Bulk Tools
+- Environment Tools
+- Terrain Tools
+- Spatial Tools
+- Asset Tools
+- State Tools
+- Log Tools
 
 ## Tool Implementation Pattern
 
@@ -131,3 +172,14 @@ npm test         # Run tests
 - Use `express` for HTTP/SSE server
 - Target ES2022, Module Node16
 - Follow existing code style
+
+## New Tool Checklist
+
+When adding a new MCP tool, verify all steps are complete:
+
+- [ ] Tool implemented in `mcp-server/src/tools/*.ts`
+- [ ] Tool exported in `mcp-server/src/tools/index.ts`
+- [ ] Tool registered in server
+- [ ] TypeScript types defined
+- [ ] Build passes: `npm run build`
+- [ ] **Documentation updated**: `mcp-server/marketplace/plugins/weppy-roblox-mcp/skills/roblox-mcp-guide/SKILL.md`

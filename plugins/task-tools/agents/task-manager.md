@@ -2,7 +2,7 @@
 name: task-manager
 description: Task planning and progress management agent. Use when user says "plan this project", "manage tasks", "track progress", "coordinate work", "handoff", "resume", or needs comprehensive project planning, task coordination, progress monitoring, or session continuity.
 tools: Read, Edit, Write, Bash, Grep, Glob, Task, AskUserQuestion, TodoWrite
-model: sonnet
+model: inherit
 skills:
   - task-planner
   - task-tracker

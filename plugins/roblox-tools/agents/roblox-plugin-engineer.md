@@ -3,7 +3,7 @@ name: roblox-plugin-engineer
 description: Roblox Studio plugin (Luau) development. Handles plugin/ code, CommandHandler implementation, SSE client, and type conversion. Use for "plugin", "Luau", "Roblox", or "handler implementation" requests.
 color: "#00A2FF"
 tools: Read, Edit, Write, Bash, Glob, Grep
-model: sonnet
+model: inherit
 allowedTools:
   - Read
   - Edit

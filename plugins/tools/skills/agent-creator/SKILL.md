@@ -72,19 +72,19 @@ Before creating an agent, gather necessary information. **Ask the user** if any 
 
 ### Model Selection (Required)
 
-> **IMPORTANT**: Always ask the user which model to use. Default is `sonnet`.
+> **IMPORTANT**: Always ask the user which model to use. Default is `inherit`.
 
 **Ask the user:**
 > "Which model should this agent use?"
 >
 > | Model | Best For | Trade-off |
 > |-------|----------|-----------|
-> | `sonnet` (Recommended) | Balanced tasks, code review, general development | Good balance of capability and speed |
+> | `inherit` (Recommended) | Use same model as main conversation | Depends on user's current session |
+> | `sonnet` | Balanced tasks, code review, general development | Good balance of capability and speed |
 > | `opus` | Complex reasoning, architecture decisions, difficult debugging | Most capable but slower and more expensive |
 > | `haiku` | Simple tasks, quick lookups, high-volume operations | Fastest and cheapest but less capable |
-> | `inherit` | Use same model as main conversation | Depends on user's current session |
 
-**Default**: If user doesn't specify, use `sonnet`.
+**Default**: If user doesn't specify, use `inherit`.
 
 ---
 
@@ -149,7 +149,7 @@ When invoked:
 | `description` | Yes | When Claude should delegate. Include trigger phrases |
 | `tools` | No | Allowed tools. Inherits all if omitted |
 | `disallowedTools` | No | Tools to deny from inherited list |
-| `model` | No | `sonnet`, `opus`, `haiku`, or `inherit` (default) |
+| `model` | No | `inherit` (default), `sonnet`, `opus`, or `haiku` |
 | `permissionMode` | No | `default`, `acceptEdits`, `dontAsk`, `bypassPermissions`, `plan` |
 | `skills` | No | Skills to preload into agent's context at startup |
 | `hooks` | No | Lifecycle hooks (PreToolUse, PostToolUse, Stop) |
