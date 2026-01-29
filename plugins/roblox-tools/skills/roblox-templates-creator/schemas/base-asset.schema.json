@@ -1,0 +1,157 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "base-asset.schema.json",
+  "title": "Base Asset Schema",
+  "description": "Common fields required for all Roblox template assets",
+  "type": "object",
+  "required": ["id", "name", "type", "cameraConfig"],
+  "properties": {
+    "id": {
+      "type": "integer",
+      "description": "Roblox asset ID",
+      "minimum": 1
+    },
+    "name": {
+      "type": "string",
+      "description": "Display name of the asset",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "type": {
+      "type": "string",
+      "description": "Subtype within the category",
+      "minLength": 1
+    },
+    "query": {
+      "type": "string",
+      "description": "Search query used to find this asset"
+    },
+    "creator": {
+      "type": "string",
+      "description": "Creator's Roblox username"
+    },
+    "description": {
+      "type": "string",
+      "description": "Brief description of the asset"
+    },
+    "recommended": {
+      "type": "boolean",
+      "description": "Whether this asset is recommended for use",
+      "default": false
+    },
+    "structure": {
+      "$ref": "#/$defs/structure"
+    },
+    "cameraConfig": {
+      "$ref": "#/$defs/cameraConfig"
+    }
+  },
+  "$defs": {
+    "vector3": {
+      "type": "object",
+      "required": ["x", "y", "z"],
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "z": { "type": "number" }
+      },
+      "additionalProperties": false
+    },
+    "boundingBox": {
+      "type": "object",
+      "required": ["x", "y", "z"],
+      "properties": {
+        "x": { "type": "number", "minimum": 0 },
+        "y": { "type": "number", "minimum": 0 },
+        "z": { "type": "number", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "bounds": {
+      "type": "object",
+      "required": ["min", "max"],
+      "properties": {
+        "min": { "$ref": "#/$defs/vector3" },
+        "max": { "$ref": "#/$defs/vector3" }
+      },
+      "additionalProperties": false
+    },
+    "cameraConfig": {
+      "type": "object",
+      "required": ["distance", "pitch", "yaw"],
+      "properties": {
+        "distance": {
+          "type": "number",
+          "description": "Camera distance multiplier (1.0 = fit to bounds)",
+          "minimum": 0.1,
+          "maximum": 10.0
+        },
+        "pitch": {
+          "type": "number",
+          "description": "Camera pitch angle in degrees",
+          "minimum": -90,
+          "maximum": 90
+        },
+        "yaw": {
+          "type": "number",
+          "description": "Camera yaw angle in degrees",
+          "minimum": 0,
+          "maximum": 360
+        }
+      },
+      "additionalProperties": false
+    },
+    "structure": {
+      "type": "object",
+      "properties": {
+        "className": {
+          "type": "string",
+          "description": "Root instance class name",
+          "enum": ["Model", "Folder", "Tool", "Part", "MeshPart", "Script", "LocalScript", "ModuleScript"]
+        },
+        "partCount": {
+          "type": "integer",
+          "description": "Number of BasePart instances",
+          "minimum": 0
+        },
+        "meshPartCount": {
+          "type": "integer",
+          "description": "Number of MeshPart instances",
+          "minimum": 0
+        },
+        "models": {
+          "type": "integer",
+          "description": "Number of Model instances",
+          "minimum": 0
+        },
+        "unions": {
+          "type": "integer",
+          "description": "Number of UnionOperation instances",
+          "minimum": 0
+        },
+        "textures": {
+          "type": "integer",
+          "description": "Number of texture instances",
+          "minimum": 0
+        },
+        "boundingBox": { "$ref": "#/$defs/boundingBox" },
+        "hasScripts": { "type": "boolean" },
+        "hasHumanoid": { "type": "boolean" },
+        "hasHandle": { "type": "boolean" },
+        "hasPBR": { "type": "boolean" },
+        "hasConfiguration": { "type": "boolean" },
+        "hasRemoteEvent": { "type": "boolean" },
+        "hasTrail": { "type": "boolean" },
+        "hasSounds": { "type": "boolean" },
+        "hasSound": { "type": "boolean" },
+        "hasEffects": { "type": "boolean" },
+        "hasLighting": { "type": "boolean" },
+        "hasParticleEmitter": { "type": "boolean" },
+        "motor6D": { "type": "integer", "minimum": 0 },
+        "animations": { "type": "integer", "minimum": 0 },
+        "moduleScripts": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": true
+    }
+  }
+}

@@ -116,10 +116,9 @@ check_field() {
 check_field "name"
 check_field "theme"
 check_field "bounds"
-check_field "suggestedSpawns"
-check_field "objectSpawns"
-check_field "cameraFocus"
-check_field "steps"
+check_field "generation"
+check_field "spawnConfig"
+check_field "cameraConfig"
 
 echo ""
 
@@ -161,33 +160,74 @@ fi
 
 echo ""
 
-# Spawn positions count
-echo "--- Spawn Positions ---"
-SPAWN_COUNT=$(jq ".presets[\"$PRESET_KEY\"].suggestedSpawns | length" "$JSON_FILE")
-OBJECT_SPAWN_COUNT=$(jq ".presets[\"$PRESET_KEY\"].objectSpawns | length" "$JSON_FILE")
+# Generation parameters validation
+echo "--- Generation Parameters ---"
+check_generation_param() {
+    local param="$1"
+    local base=$(jq -r ".presets[\"$PRESET_KEY\"].generation.$param.base // \"null\"" "$JSON_FILE")
+    local variance=$(jq -r ".presets[\"$PRESET_KEY\"].generation.$param.variance // \"null\"" "$JSON_FILE")
 
-if [ "$SPAWN_COUNT" -lt 3 ]; then
-    echo "  [FAIL] suggestedSpawns: $SPAWN_COUNT (minimum 3 required)"
+    if [ "$base" == "null" ]; then
+        echo "  [FAIL] generation.$param.base: MISSING"
+        ((ERRORS++))
+    elif [ "$variance" == "null" ]; then
+        echo "  [WARN] generation.$param.variance: MISSING (using 0)"
+        ((WARNINGS++))
+    else
+        echo "  [PASS] generation.$param: base=$base, variance=$variance"
+    fi
+}
+
+check_generation_param "baseHeight"
+check_generation_param "amplitude"
+check_generation_param "frequency"
+
+# Layers validation
+LAYER_COUNT=$(jq ".presets[\"$PRESET_KEY\"].generation.layers | length" "$JSON_FILE")
+if [ "$LAYER_COUNT" -lt 1 ]; then
+    echo "  [FAIL] generation.layers: empty"
     ((ERRORS++))
 else
-    echo "  [PASS] suggestedSpawns: $SPAWN_COUNT positions"
-fi
+    echo "  [PASS] generation.layers: $LAYER_COUNT layers"
 
-if [ "$OBJECT_SPAWN_COUNT" -lt 5 ]; then
-    echo "  [WARN] objectSpawns: $OBJECT_SPAWN_COUNT (recommended 5)"
-    ((WARNINGS++))
-else
-    echo "  [PASS] objectSpawns: $OBJECT_SPAWN_COUNT positions"
+    # Check layers are ordered by maxHeight
+    PREV_HEIGHT=-9999
+    for i in $(seq 0 $((LAYER_COUNT - 1))); do
+        MATERIAL=$(jq -r ".presets[\"$PRESET_KEY\"].generation.layers[$i].material" "$JSON_FILE")
+        MAX_HEIGHT=$(jq -r ".presets[\"$PRESET_KEY\"].generation.layers[$i].maxHeight" "$JSON_FILE")
+
+        if (( $(echo "$MAX_HEIGHT < $PREV_HEIGHT" | bc -l) )); then
+            echo "  [WARN] Layer $MATERIAL (maxHeight=$MAX_HEIGHT) should come before previous layer"
+            ((WARNINGS++))
+        fi
+        PREV_HEIGHT=$MAX_HEIGHT
+    done
 fi
 
 echo ""
 
-# Spawn positions within bounds
-echo "--- Spawn Within Bounds ---"
-for i in $(seq 0 $((SPAWN_COUNT - 1))); do
-    SPAWN_X=$(jq -r ".presets[\"$PRESET_KEY\"].suggestedSpawns[$i].x" "$JSON_FILE")
-    SPAWN_Y=$(jq -r ".presets[\"$PRESET_KEY\"].suggestedSpawns[$i].y" "$JSON_FILE")
-    SPAWN_Z=$(jq -r ".presets[\"$PRESET_KEY\"].suggestedSpawns[$i].z" "$JSON_FILE")
+# Spawn config validation
+echo "--- Spawn Configuration ---"
+SPAWN_COUNT=$(jq -r ".presets[\"$PRESET_KEY\"].spawnConfig.count // 0" "$JSON_FILE")
+FALLBACK_COUNT=$(jq ".presets[\"$PRESET_KEY\"].spawnConfig.fallbackSpawns | length" "$JSON_FILE")
+
+echo "  spawnConfig.count: $SPAWN_COUNT"
+echo "  fallbackSpawns: $FALLBACK_COUNT positions"
+
+if [ "$FALLBACK_COUNT" -lt "$SPAWN_COUNT" ]; then
+    echo "  [FAIL] fallbackSpawns ($FALLBACK_COUNT) < spawnConfig.count ($SPAWN_COUNT)"
+    ((ERRORS++))
+else
+    echo "  [PASS] Sufficient fallback spawns"
+fi
+
+# Check fallback spawns are within bounds
+echo ""
+echo "--- Fallback Spawns Within Bounds ---"
+for i in $(seq 0 $((FALLBACK_COUNT - 1))); do
+    SPAWN_X=$(jq -r ".presets[\"$PRESET_KEY\"].spawnConfig.fallbackSpawns[$i].x" "$JSON_FILE")
+    SPAWN_Y=$(jq -r ".presets[\"$PRESET_KEY\"].spawnConfig.fallbackSpawns[$i].y" "$JSON_FILE")
+    SPAWN_Z=$(jq -r ".presets[\"$PRESET_KEY\"].spawnConfig.fallbackSpawns[$i].z" "$JSON_FILE")
 
     IN_BOUNDS=true
     if (( $(echo "$SPAWN_X < $BOUNDS_MIN_X || $SPAWN_X > $BOUNDS_MAX_X" | bc -l) )); then
@@ -201,57 +241,60 @@ for i in $(seq 0 $((SPAWN_COUNT - 1))); do
     fi
 
     if [ "$IN_BOUNDS" = true ]; then
-        echo "  [PASS] Spawn $((i+1)): ($SPAWN_X, $SPAWN_Y, $SPAWN_Z)"
+        echo "  [PASS] Fallback $((i+1)): ($SPAWN_X, $SPAWN_Y, $SPAWN_Z)"
     else
-        echo "  [WARN] Spawn $((i+1)): ($SPAWN_X, $SPAWN_Y, $SPAWN_Z) - outside bounds"
+        echo "  [WARN] Fallback $((i+1)): ($SPAWN_X, $SPAWN_Y, $SPAWN_Z) - outside bounds"
         ((WARNINGS++))
     fi
 done
 
 echo ""
 
-# Camera focus within bounds
-echo "--- Camera Focus ---"
-CAM_X=$(jq -r ".presets[\"$PRESET_KEY\"].cameraFocus.x // \"null\"" "$JSON_FILE")
-CAM_Y=$(jq -r ".presets[\"$PRESET_KEY\"].cameraFocus.y // \"null\"" "$JSON_FILE")
-CAM_Z=$(jq -r ".presets[\"$PRESET_KEY\"].cameraFocus.z // \"null\"" "$JSON_FILE")
+# Camera config validation
+echo "--- Camera Configuration ---"
+CAM_HEIGHT=$(jq -r ".presets[\"$PRESET_KEY\"].cameraConfig.heightAboveGround // \"null\"" "$JSON_FILE")
+CAM_DISTANCE=$(jq -r ".presets[\"$PRESET_KEY\"].cameraConfig.distance // \"null\"" "$JSON_FILE")
+CAM_PITCH=$(jq -r ".presets[\"$PRESET_KEY\"].cameraConfig.pitch // \"null\"" "$JSON_FILE")
+CAM_YAW=$(jq -r ".presets[\"$PRESET_KEY\"].cameraConfig.yaw // \"null\"" "$JSON_FILE")
 
-if [ "$CAM_X" != "null" ] && [ "$CAM_Y" != "null" ] && [ "$CAM_Z" != "null" ]; then
-    echo "  [PASS] cameraFocus: ($CAM_X, $CAM_Y, $CAM_Z)"
+if [ "$CAM_HEIGHT" != "null" ] && [ "$CAM_DISTANCE" != "null" ]; then
+    echo "  [PASS] heightAboveGround: $CAM_HEIGHT"
+    echo "  [PASS] distance: $CAM_DISTANCE"
+    echo "  [PASS] pitch: $CAM_PITCH, yaw: $CAM_YAW"
 else
-    echo "  [FAIL] cameraFocus: incomplete coordinates"
+    echo "  [FAIL] cameraConfig: incomplete"
     ((ERRORS++))
 fi
 
 echo ""
 
-# Steps validation
-echo "--- Steps Validation ---"
-STEP_COUNT=$(jq ".presets[\"$PRESET_KEY\"].steps | length" "$JSON_FILE")
-echo "  Total steps: $STEP_COUNT"
+# Post process validation
+echo "--- Post Process ---"
+POST_COUNT=$(jq ".presets[\"$PRESET_KEY\"].postProcess | length" "$JSON_FILE")
+if [ "$POST_COUNT" -eq 0 ]; then
+    echo "  [INFO] No post-processing steps"
+else
+    VALID_TOOLS=("terrain_smooth" "terrain_fill_block" "terrain_fill_ball" "terrain_fill_cylinder" "terrain_fill_wedge" "terrain_clear" "terrain_replace_material")
 
-VALID_TOOLS=("terrain_fill_block" "terrain_fill_ball" "terrain_fill_cylinder" "terrain_fill_wedge" "terrain_clear" "terrain_smooth" "terrain_generate")
+    for i in $(seq 0 $((POST_COUNT - 1))); do
+        TOOL=$(jq -r ".presets[\"$PRESET_KEY\"].postProcess[$i].tool" "$JSON_FILE")
 
-for i in $(seq 0 $((STEP_COUNT - 1))); do
-    TOOL=$(jq -r ".presets[\"$PRESET_KEY\"].steps[$i].tool" "$JSON_FILE")
-    ORDER=$(jq -r ".presets[\"$PRESET_KEY\"].steps[$i].order // $((i+1))" "$JSON_FILE")
-    NOTE=$(jq -r ".presets[\"$PRESET_KEY\"].steps[$i].note // \"\"" "$JSON_FILE")
+        TOOL_VALID=false
+        for valid in "${VALID_TOOLS[@]}"; do
+            if [ "$TOOL" == "$valid" ]; then
+                TOOL_VALID=true
+                break
+            fi
+        done
 
-    TOOL_VALID=false
-    for valid in "${VALID_TOOLS[@]}"; do
-        if [ "$TOOL" == "$valid" ]; then
-            TOOL_VALID=true
-            break
+        if [ "$TOOL_VALID" = true ]; then
+            echo "  [PASS] Step $((i+1)): $TOOL"
+        else
+            echo "  [FAIL] Step $((i+1)): Unknown tool '$TOOL'"
+            ((ERRORS++))
         fi
     done
-
-    if [ "$TOOL_VALID" = true ]; then
-        echo "  [PASS] Step $ORDER: $TOOL ($NOTE)"
-    else
-        echo "  [FAIL] Step $ORDER: Unknown tool '$TOOL'"
-        ((ERRORS++))
-    fi
-done
+fi
 
 echo ""
 echo "=== Summary ==="

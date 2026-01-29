@@ -1,0 +1,153 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "category-schemas.json",
+  "title": "Category-Specific Asset Schemas",
+  "description": "Schema definitions for each asset category",
+
+  "$defs": {
+    "vector3": {
+      "type": "object",
+      "required": ["x", "y", "z"],
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "z": { "type": "number" }
+      }
+    },
+    "bounds": {
+      "type": "object",
+      "required": ["min", "max"],
+      "properties": {
+        "min": { "$ref": "#/$defs/vector3" },
+        "max": { "$ref": "#/$defs/vector3" }
+      }
+    },
+    "cameraConfig": {
+      "type": "object",
+      "required": ["distance", "pitch", "yaw"],
+      "properties": {
+        "distance": { "type": "number", "minimum": 0.1, "maximum": 10.0 },
+        "pitch": { "type": "number", "minimum": -90, "maximum": 90 },
+        "yaw": { "type": "number", "minimum": 0, "maximum": 360 }
+      }
+    }
+  },
+
+  "categories": {
+    "monsters": {
+      "description": "Enemy NPCs with AI and combat capabilities",
+      "requiredFields": ["id", "name", "type", "cameraConfig"],
+      "optionalFields": ["query", "creator", "description", "structure", "recommended"],
+      "typeEnum": ["undead", "beast", "humanoid", "boss", "creature", "elemental", "mechanical"],
+      "defaultCameraConfig": { "distance": 2.0, "pitch": 15, "yaw": 45 },
+      "structureHints": {
+        "preferR15": true,
+        "requiresHumanoid": true,
+        "maxPartCount": 100
+      }
+    },
+
+    "weapons": {
+      "description": "Player-equippable tools for combat",
+      "requiredFields": ["id", "name", "type", "cameraConfig"],
+      "optionalFields": ["query", "creator", "description", "structure", "recommended"],
+      "typeEnum": ["melee", "ranged", "magic", "defense"],
+      "defaultCameraConfig": { "distance": 3.0, "pitch": 20, "yaw": 30 },
+      "structureHints": {
+        "requiresHandle": true,
+        "requiresTool": true,
+        "maxPartCount": 50
+      }
+    },
+
+    "items": {
+      "description": "Collectibles, consumables, and quest items",
+      "requiredFields": ["id", "name", "type", "cameraConfig"],
+      "optionalFields": ["query", "creator", "description", "structure", "recommended"],
+      "typeEnum": ["currency", "consumable", "container", "quest", "material"],
+      "defaultCameraConfig": { "distance": 3.0, "pitch": 25, "yaw": 30 },
+      "structureHints": {
+        "maxPartCount": 20
+      }
+    },
+
+    "effects": {
+      "description": "Particle and visual effects",
+      "requiredFields": ["id", "name", "type", "cameraConfig"],
+      "optionalFields": ["query", "creator", "description", "structure", "recommended"],
+      "typeEnum": ["combat", "magic", "status", "ambient", "collection"],
+      "defaultCameraConfig": { "distance": 2.5, "pitch": 20, "yaw": 30 },
+      "structureHints": {
+        "hasParticleEmitter": true
+      }
+    },
+
+    "environment": {
+      "description": "Props, buildings, and decorations",
+      "requiredFields": ["id", "name", "type", "cameraConfig"],
+      "optionalFields": ["query", "creator", "description", "structure", "subtype", "recommended"],
+      "typeEnum": ["nature", "buildings", "props", "structures"],
+      "subtypeEnum": {
+        "nature": ["trees", "rocks", "plants"],
+        "buildings": ["village", "castle", "dungeon"],
+        "props": ["furniture", "containers", "lighting", "misc"],
+        "structures": ["bridges", "roads"]
+      },
+      "defaultCameraConfig": { "distance": 2.0, "pitch": 20, "yaw": 45 },
+      "structureHints": {
+        "anchored": true,
+        "maxPartCount": 200
+      }
+    },
+
+    "npcs": {
+      "description": "Non-hostile NPCs for interaction",
+      "requiredFields": ["id", "name", "type", "cameraConfig"],
+      "optionalFields": ["query", "creator", "description", "structure", "recommended"],
+      "typeEnum": ["villager", "merchant", "quest", "service", "guard"],
+      "defaultCameraConfig": { "distance": 2.0, "pitch": 15, "yaw": 45 },
+      "structureHints": {
+        "preferR15": true,
+        "requiresHumanoid": true
+      }
+    },
+
+    "maps": {
+      "description": "Pre-built map environments",
+      "requiredFields": ["id", "name", "type", "theme", "cameraConfig", "suggestedSpawns"],
+      "optionalFields": ["query", "creator", "description", "structure", "bounds", "objectSpawns", "cameraFocus", "recommended"],
+      "typeEnum": ["map", "landscape", "generator"],
+      "themeEnum": ["procedural", "island", "mountain", "forest", "village", "dungeon", "castle", "arena", "desert", "snow", "lava", "sky_island", "city", "winter_village"],
+      "defaultCameraConfig": { "distance": 1.2, "pitch": 25, "yaw": 30 },
+      "validation": {
+        "minSuggestedSpawns": 3,
+        "minObjectSpawns": 3
+      }
+    }
+  },
+
+  "fileStructure": {
+    "_meta": {
+      "required": ["category", "description", "lastUpdated", "totalAssets"],
+      "properties": {
+        "category": { "type": "string" },
+        "description": { "type": "string" },
+        "lastUpdated": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "totalAssets": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "searchHints": {
+      "description": "Search query suggestions grouped by type"
+    },
+    "qualityCriteria": {
+      "description": "Asset quality requirements for the category"
+    },
+    "defaultCameraConfig": {
+      "$ref": "#/$defs/cameraConfig"
+    },
+    "assets": {
+      "type": "array",
+      "description": "Array of assets following category schema"
+    }
+  }
+}
