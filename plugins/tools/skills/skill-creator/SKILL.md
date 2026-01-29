@@ -14,10 +14,12 @@ Phase 0: Check Official Documentation
    ↓ Fetch latest spec from official docs
 Phase 1: Clarify Requirements
    ↓ Ask questions to understand skill purpose
+Phase 1.5: Identify Preconditions & Completion Criteria
+   ↓ Determine start conditions and success criteria
 Phase 2: Create Skill
-   ↓ Generate SKILL.md with proper structure
+   ↓ Generate SKILL.md with Workflow at top + scripts
 Phase 3: Test & Verify
-   ↓ Test invocation and behavior
+   ↓ Test invocation, precondition checks, and completion verification
 Phase 4: User Confirmation
    ↓ Report results and get approval
 ```
@@ -71,18 +73,92 @@ Before creating a skill, gather necessary information. **Ask the user** if any a
 
 ---
 
+## Phase 1.5: Identify Preconditions & Completion Criteria
+
+> **MANDATORY**: For every skill, explicitly determine preconditions and completion criteria.
+
+### Precondition Analysis
+
+Ask the user (or infer from context):
+
+| Question | Example |
+|----------|---------|
+| What must exist before this skill can run? | Specific files, tools, services, environment variables |
+| What state must the project be in? | Clean git state, running server, specific branch |
+| What external dependencies are required? | CLI tools (`node`, `rojo`, `gh`), running processes, network access |
+
+**Decision rule:**
+- If **any precondition exists** → Create `scripts/check-preconditions.sh`
+- If **no preconditions** → Skip the script but document "No preconditions" in SKILL.md
+
+### Completion Criteria Analysis
+
+Ask the user (or infer from context):
+
+| Question | Example |
+|----------|---------|
+| How do we know the skill finished successfully? | Output file exists, tests pass, server responds |
+| What artifacts should exist after completion? | Generated files, modified configs, new entries |
+| What state should the project be in after? | All tests green, no lint errors, build succeeds |
+
+**Decision rule:**
+- If **any verifiable completion criteria exists** → Create `scripts/verify-completion.sh`
+- If **no verifiable criteria** (e.g., pure knowledge/reference skills) → Skip the script
+
+### Script Requirements
+
+When creating scripts, follow these rules:
+
+```bash
+# scripts/check-preconditions.sh
+#!/bin/bash
+set -e
+
+# Each check: descriptive message on failure, exit 1 to block
+# Exit 0 only when ALL preconditions are met
+
+echo "Checking preconditions..."
+
+# Example checks:
+# command -v node >/dev/null 2>&1 || { echo "FAIL: node is required" >&2; exit 1; }
+# [ -f "package.json" ] || { echo "FAIL: package.json not found" >&2; exit 1; }
+# curl -sf http://localhost:3002/status >/dev/null || { echo "FAIL: MCP server not running" >&2; exit 1; }
+
+echo "All preconditions met"
+```
+
+```bash
+# scripts/verify-completion.sh
+#!/bin/bash
+set -e
+
+# Each check: verify an expected outcome, exit 1 on failure
+# Exit 0 only when ALL completion criteria are satisfied
+
+echo "Verifying completion..."
+
+# Example checks:
+# [ -f "$1" ] || { echo "FAIL: Expected output file not found: $1" >&2; exit 1; }
+# [ -s "$1" ] || { echo "FAIL: Output file is empty: $1" >&2; exit 1; }
+# npm test --silent || { echo "FAIL: Tests did not pass" >&2; exit 1; }
+
+echo "All completion criteria verified"
+```
+
+---
+
 ## Phase 2: Create Skill
 
 ### Skill Directory Structure
 
 ```
 skill-name/
-├── SKILL.md              # Required: main instructions
-├── scripts/              # Optional: executable code
-│   ├── validate.sh       # Pre-execution validation
-│   └── verify-result.sh  # Post-execution verification
-├── references/           # Optional: detailed documentation
-└── assets/               # Optional: templates, images
+├── SKILL.md                    # Required: main instructions
+├── scripts/                    # Conditional: executable scripts
+│   ├── check-preconditions.sh  # When preconditions exist
+│   └── verify-completion.sh    # When completion criteria exist
+├── references/                 # Optional: detailed documentation
+└── assets/                     # Optional: templates, images
 ```
 
 ### Where Skills Live
@@ -95,6 +171,8 @@ skill-name/
 
 ### SKILL.md Template
 
+> **RULE**: The `## Workflow` section MUST be the first content section after the title. This ensures Claude always sees the execution flow before any details.
+
 ```markdown
 ---
 name: {skill-name}
@@ -103,15 +181,36 @@ description: {What this skill does. Use when...}
 
 # {Skill Title}
 
-{Instructions for Claude when this skill is active}
+{One-line summary of what this skill does}
 
 ## Workflow
-1. {Step 1}
-2. {Step 2}
 
-## Validation (if applicable)
-Run `scripts/validate.sh` before execution to verify preconditions.
-Run `scripts/verify-result.sh` after execution to confirm success.
+{Workflow diagram or numbered steps - ALWAYS first section}
+
+```
+Step 1: {Precondition Check}
+   ↓ Run scripts/check-preconditions.sh (if applicable)
+Step 2: {First action}
+   ↓
+Step 3: {Second action}
+   ↓
+Step N: {Completion Verification}
+   ↓ Run scripts/verify-completion.sh (if applicable)
+```
+
+## Precondition Check (if applicable)
+
+Run `scripts/check-preconditions.sh` before starting.
+If it fails, report the missing precondition to the user and stop.
+
+## Instructions
+
+{Detailed instructions for each workflow step}
+
+## Completion Verification (if applicable)
+
+Run `scripts/verify-completion.sh` after finishing.
+If it fails, investigate and fix before reporting success.
 ```
 
 ### Frontmatter Fields Reference
@@ -168,13 +267,20 @@ name: api-conventions
 description: API design patterns for this codebase
 ---
 
+# API Conventions
+
+## Workflow
+1. Read these conventions before writing any API code
+2. Apply all rules during implementation
+3. No scripts needed (reference-only skill)
+
 When writing API endpoints:
 - Use RESTful naming conventions
 - Return consistent error formats
 - Include request validation
 ```
 
-**Task Content** - Step-by-step instructions:
+**Task Content** - Step-by-step instructions with validation:
 ```yaml
 ---
 name: deploy
@@ -183,10 +289,39 @@ context: fork
 disable-model-invocation: true
 ---
 
+# Deploy
+
+## Workflow
+
+```
+Step 1: Precondition Check
+   ↓ Run scripts/check-preconditions.sh
+Step 2: Run Tests
+   ↓
+Step 3: Build Application
+   ↓
+Step 4: Push to Deployment Target
+   ↓
+Step 5: Completion Verification
+   ↓ Run scripts/verify-completion.sh
+```
+
+## Precondition Check
+Run `scripts/check-preconditions.sh` to verify:
+- Clean git working tree
+- All tests passing
+- Correct branch
+
+## Instructions
 Deploy $ARGUMENTS to production:
 1. Run the test suite
 2. Build the application
 3. Push to the deployment target
+
+## Completion Verification
+Run `scripts/verify-completion.sh` to confirm:
+- Deployment endpoint responds 200
+- No errors in deployment logs
 ```
 
 **Subagent Skill** - Run in isolated context:
@@ -198,10 +333,14 @@ context: fork
 agent: Explore
 ---
 
-Research $ARGUMENTS thoroughly:
+# Deep Research
+
+## Workflow
 1. Find relevant files using Glob and Grep
 2. Read and analyze the code
 3. Summarize findings with specific file references
+
+Research $ARGUMENTS thoroughly.
 ```
 
 ### Dynamic Context with Shell Commands
@@ -230,7 +369,17 @@ Summarize this pull request...
 
 After creating the skill:
 
-### 3.1 Test Invocation
+### 3.1 Test Precondition Script (if created)
+
+```bash
+# Run the precondition check
+bash {skill-path}/scripts/check-preconditions.sh
+
+# Verify it blocks correctly when preconditions are NOT met
+# (temporarily break a precondition and confirm exit 1)
+```
+
+### 3.2 Test Invocation
 
 **Direct invocation:**
 ```
@@ -240,37 +389,26 @@ After creating the skill:
 **Automatic invocation (if enabled):**
 Ask Claude something that matches the description keywords.
 
-### 3.2 Verify Behavior
+### 3.3 Verify Behavior
 
 Check that:
 - [ ] Skill appears in `What skills are available?`
 - [ ] Description triggers work as expected
+- [ ] **Workflow is the first section** after the title
+- [ ] **Precondition script blocks** when conditions are not met
 - [ ] Instructions execute correctly
 - [ ] Supporting files load when referenced
-- [ ] Scripts run successfully (if included)
+- [ ] **Completion script passes** when work is done correctly
+- [ ] **Completion script fails** when work is incomplete
 
-### 3.3 Validation Scripts (if applicable)
+### 3.4 Test Completion Script (if created)
 
-**Pre-execution validation:**
 ```bash
-# scripts/validate.sh
-#!/bin/bash
-set -e
-# Check required environment
-command -v node >/dev/null || { echo "Node.js required" >&2; exit 1; }
-# Check required files
-[ -f "package.json" ] || { echo "package.json required" >&2; exit 1; }
-echo "Validation passed"
-```
+# Run after skill completes successfully
+bash {skill-path}/scripts/verify-completion.sh [args]
 
-**Post-execution verification:**
-```bash
-# scripts/verify-result.sh
-#!/bin/bash
-OUTPUT_FILE="$1"
-[ -f "$OUTPUT_FILE" ] || { echo "Output not found" >&2; exit 1; }
-[ -s "$OUTPUT_FILE" ] || { echo "Output is empty" >&2; exit 1; }
-echo "Result verified: $OUTPUT_FILE"
+# Verify it detects incomplete work
+# (simulate partial completion and confirm exit 1)
 ```
 
 ---
@@ -280,16 +418,20 @@ echo "Result verified: $OUTPUT_FILE"
 After testing, report to user:
 
 ```
-✅ Skill Created Successfully
+Skill Created Successfully
 
-📁 Location: {path}/skills/{skill-name}/SKILL.md
-📝 Name: {skill-name}
-📋 Description: {description}
+Location: {path}/skills/{skill-name}/SKILL.md
+Name: {skill-name}
+Description: {description}
+Precondition Script: {Yes/No - description of what it checks}
+Completion Script: {Yes/No - description of what it verifies}
 
 Test Results:
 - [ ] Direct invocation: /{skill-name} works
 - [ ] Auto-invocation: Claude triggers when relevant
-- [ ] Scripts: All validation scripts pass
+- [ ] Precondition check: Blocks when conditions not met
+- [ ] Completion check: Passes on success, fails on incomplete
+- [ ] Workflow is first section in SKILL.md
 
 Would you like to:
 1. Make any modifications
@@ -314,21 +456,36 @@ Would you like to:
 - Check context budget (default 15,000 chars for descriptions)
 - Set `SLASH_COMMAND_TOOL_CHAR_BUDGET` env var to increase limit
 
+### Precondition script not blocking
+- Ensure script exits with code 1 on failure
+- Check `set -e` is at the top
+- Verify script is executable (`chmod +x`)
+
+### Completion script gives false positive
+- Add more specific checks (file content, not just existence)
+- Test with intentionally incomplete output
+
 ---
 
 ## Quick Reference
 
-**Minimal skill:**
+**Minimal skill (no scripts needed):**
 ```yaml
 ---
 name: my-skill
 description: What it does. Use when...
 ---
 
+# My Skill
+
+## Workflow
+1. Step one
+2. Step two
+
 Instructions here...
 ```
 
-**Full-featured skill:**
+**Full-featured skill (with precondition + completion scripts):**
 ```yaml
 ---
 name: my-skill
@@ -340,15 +497,40 @@ context: fork
 agent: Explore
 ---
 
-# Skill Title
-
-## Pre-check
-Run `scripts/validate.sh` to verify environment.
+# My Skill
 
 ## Workflow
+
+```
+Step 1: Precondition Check
+   ↓ Run scripts/check-preconditions.sh
+Step 2: Do work with $ARGUMENTS
+   ↓
+Step 3: Completion Verification
+   ↓ Run scripts/verify-completion.sh
+```
+
+## Precondition Check
+Run `scripts/check-preconditions.sh` to verify environment.
+If it fails, stop and report the issue.
+
+## Instructions
 1. Step one with $ARGUMENTS
 2. Step two
 
-## Post-check
-Run `scripts/verify-result.sh {output}` to confirm.
+## Completion Verification
+Run `scripts/verify-completion.sh {output}` to confirm success.
+If it fails, fix the issue before reporting completion.
 ```
+
+---
+
+## Mandatory Rules Summary
+
+| Rule | Description |
+|------|-------------|
+| **Workflow First** | `## Workflow` MUST be the first content section after the skill title in every SKILL.md |
+| **Precondition Script** | If the skill has ANY start conditions (tools, files, services, state), create `scripts/check-preconditions.sh` |
+| **Completion Script** | If the skill produces ANY verifiable output (files, state changes, test results), create `scripts/verify-completion.sh` |
+| **Script Standards** | All scripts: `#!/bin/bash`, `set -e`, descriptive failure messages to stderr, exit 1 on failure |
+| **Workflow includes scripts** | The workflow diagram must show precondition check as first step and completion verification as last step (when applicable) |
