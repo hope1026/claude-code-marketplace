@@ -324,12 +324,12 @@ claude --debug
 After testing, report to user:
 
 ```
-✅ Plugin Created Successfully
+Plugin Created Successfully
 
-📁 Location: {path}/{plugin-name}/
-📝 Name: {plugin-name}
-📋 Description: {description}
-📦 Version: {version}
+Location: {path}/{plugin-name}/
+Name: {plugin-name}
+Description: {description}
+Version: {version}
 
 Components:
 - [ ] Skills: {count} skill(s)

@@ -6,54 +6,54 @@ argument-hint: "[category] [search-query]"
 
 # Roblox Templates Creator
 
-Create, verify, and register assets and terrain presets for the `roblox-templates` registry.
+Create, verify, and register assets for the `roblox-templates` registry.
+
+---
+
+## File Structure
+
+### Environment Assets (maps.json)
+
+```
+roblox-templates/assets/maps/
+├── maps.json                              # Entry point - all environments
+└── sources/
+    ├── terrain-presets-source.json        # Terrain generation configs
+    ├── standalone-maps-source.json        # Large maps (500+ studs)
+    ├── hybrid-maps-source.json            # Medium maps (200-650 studs)
+    └── addon-structures-source.json       # Small structures (<200 studs)
+```
+
+### Other Assets
+
+```
+roblox-templates/assets/
+├── monsters.json
+├── weapons.json
+├── items.json
+├── effects.json
+├── environment.json    # Props, buildings (NOT maps)
+└── npcs.json
+```
 
 ---
 
 ## Schemas
 
-All assets and presets must follow schemas in `schemas/`:
+Located in `schemas/`:
 
 | Schema | Purpose |
 |--------|---------|
 | `base-asset.schema.json` | Common fields for all assets |
 | `category-schemas.json` | Category-specific requirements |
 | `terrain-preset.schema.json` | Terrain preset structure |
+| `maps.schema.json` | maps.json registry structure |
 
 ---
 
-## Validation Scripts
+## Asset Schema
 
-### Validate All Assets
-
-```bash
-./scripts/validate-all.sh [category]
-```
-
-**Examples:**
-```bash
-./scripts/validate-all.sh          # All categories
-./scripts/validate-all.sh monsters  # Specific category
-./scripts/validate-all.sh terrain-presets
-```
-
-### Validate Terrain Preset
-
-```bash
-./scripts/validate-terrain-preset.sh <preset-key>
-```
-
-### Validate Single Asset
-
-```bash
-./scripts/validate-asset.sh <category> <asset-id-or-name>
-```
-
----
-
-## Asset Schema (Required)
-
-All assets MUST have:
+### Required Fields (All Assets)
 
 ```json
 {
@@ -62,219 +62,308 @@ All assets MUST have:
   "type": "subtype",
   "cameraConfig": {
     "distance": 2.0,
-    "pitch": 15,
-    "yaw": 45
+    "offset": { "x": 1, "y": 0.4, "z": 1 }
   }
 }
 ```
 
-**Optional fields:** `query`, `creator`, `description`, `structure`, `recommended`
+**Optional:** `query`, `creator`, `description`, `structure`, `recommended`
 
-### Category-Specific Requirements
+### Category Requirements
 
-| Category | Additional Fields |
-|----------|-------------------|
-| monsters/npcs | `structure.hasHumanoid` recommended |
-| weapons | `structure.className: "Tool"`, `structure.hasHandle` |
-| maps | `suggestedSpawns` (min 3), `bounds`, `objectSpawns`, `cameraFocus` |
-| effects | `structure.hasParticleEmitter` recommended |
+| Category | Required Fields | Notes |
+|----------|-----------------|-------|
+| monsters | `cameraConfig` | 5-20 studs typical |
+| weapons | `cameraConfig`, `structure.className: "Tool"` | 2-6 studs typical |
+| items | `cameraConfig` | Collectibles, consumables |
+| effects | `cameraConfig` | Particles, beams |
+| npcs | `cameraConfig` | May have animations |
+| maps | See Map Source Requirements | Entry via maps.json |
+
+### Map Source Requirements
+
+| Source | Size | Required Fields |
+|--------|------|-----------------|
+| `standalone-maps` | 500+ studs | bounds, suggestedSpawns(3+), objectSpawns |
+| `hybrid-maps` | 200-650 studs | bounds, suggestedSpawns, compatibleTerrains |
+| `addon-structures` | <200 studs | bounds, compatibleTerrains |
+| `terrain-presets` | N/A | generation params, layers |
+
+**Note:** 1 stud ≈ 28cm. Player character is ~5 studs tall.
 
 ---
 
 ## Camera Configuration
 
-Every asset must include `cameraConfig`:
+### Understanding distance
 
-```json
-{
-  "cameraConfig": {
-    "distance": 2.0,
-    "pitch": 15,
-    "yaw": 45
-  }
-}
-```
+**`distance` is absolute distance in studs**, not a multiplier.
 
-### Default Values by Category
+| Asset Size | Typical distance |
+|------------|------------------|
+| Small (1-10 studs) | 15-30 studs |
+| Medium (10-50 studs) | 50-100 studs |
+| Large (50-200 studs) | 150-400 studs |
+| Maps (500+ studs) | 500-1000 studs |
 
-| Category | distance | pitch | yaw |
-|----------|----------|-------|-----|
-| monsters | 2.0 | 15 | 45 |
-| weapons | 3.0 | 20 | 30 |
-| items | 3.0 | 25 | 30 |
-| effects | 2.5 | 20 | 30 |
-| environment | 2.0 | 20 | 45 |
-| npcs | 2.0 | 15 | 45 |
-| maps | 1.2 | 25 | 30 |
+### Offset Convention
 
-### Camera Angle Convention
+`offset` is a direction vector from target to camera (normalized internally).
 
-**Important:** `pitch` and `yaw` use **offset direction** (from target to camera), matching `focus_camera` parameters.
+- `x`: Horizontal (positive = camera to the right of target)
+- `y`: Vertical (positive = camera above target)
+- `z`: Depth (positive = camera in front of target)
 
-| Parameter | Description |
-|-----------|-------------|
-| `pitch` | Vertical angle (positive = looking down) |
-| `yaw` | Horizontal angle (offset direction from target to camera) |
-| `distance` | Distance multiplier from target |
-
-### Camera Testing Workflow
-
-```
-1. insert_free_model(assetId)
-2. get_bounds(path) → Get size/center
-3. focus_camera with default values
-4. User adjusts camera manually in Studio
-5. get_camera_info() → Get current pitch/yaw/position
-6. Calculate distance from camera position
-7. Save cameraConfig with verified values
-8. focus_camera with saved values → Verify it matches
-```
-
-### Getting Camera Values
-
-After user adjusts camera manually:
+### Calculating cameraConfig from Studio
 
 ```typescript
-// Get current camera state
 const cameraInfo = await mcp.get_camera_info({});
-
-// cameraInfo returns:
-// {
-//   pitch: 23,        // Use directly in cameraConfig
-//   yaw: 133,         // Use directly in cameraConfig
-//   position: {...},
-//   fieldOfView: 70
-// }
-
-// Calculate distance (camera position to model center)
 const bounds = await mcp.get_bounds({ path: modelPath });
+
+// Direction from target to camera
 const dx = cameraInfo.position.x - bounds.center.x;
 const dy = cameraInfo.position.y - bounds.center.y;
 const dz = cameraInfo.position.z - bounds.center.z;
-const actualDistance = Math.sqrt(dx*dx + dy*dy + dz*dz);
-const effectiveExtent = Math.max(bounds.size.x, bounds.size.y, bounds.size.z);
-const distanceMultiplier = actualDistance / effectiveExtent / 1.2 / 0.87;
-// Round to 1 decimal: distance = Math.round(distanceMultiplier * 10) / 10;
+
+// Actual distance in studs
+const distance = Math.round(Math.sqrt(dx*dx + dy*dy + dz*dz));
+
+// Normalize for offset (direction vector)
+const offset = {
+  x: Math.round(dx / distance * 10) / 10,
+  y: Math.round(dy / distance * 10) / 10,
+  z: Math.round(dz / distance * 10) / 10
+};
+
+const cameraConfig = { distance, offset };
 ```
 
 ---
 
-## Asset Verification Workflow
+## Verification Workflows
 
-### Step 1: Load Asset
+Three verification levels:
 
-```typescript
-const inserted = await mcp.insert_free_model({
-  assetId,
-  focusCamera: false  // Don't auto-focus
-});
+| Level | Target | Entry Point |
+|-------|--------|-------------|
+| **Map Verification** | maps.json environments | maps.json |
+| **Map Source Verification** | sources/*.json details | source files |
+| **Asset Verification** | monsters, weapons, items, etc. | asset files |
+
+---
+
+### 1. Map Verification (maps.json)
+
+**Entry Point:** Always read `maps.json` first
+
+| Request | Action |
+|---------|--------|
+| "verify maps" | maps.json → show themes list → user selects |
+| "verify forest theme" | maps.json → filter by themes.forest.environmentIds |
+| "verify Goblin Town Map" | Find environment in maps.json |
+
+#### Environment Types
+
+| Type | ID Format | Source |
+|------|-----------|--------|
+| `terrain_only` | `env-t-XXX` | terrain-presets-source.json |
+| `map_only` | `env-m-XXX` | standalone-maps or hybrid-maps |
+| `terrain_with_map` | `env-tm-XXX` | hybrid-maps-source.json |
+| `terrain_with_structures` | `env-ts-XXX` | addon-structures-source.json |
+
+#### Map Verification Workflow
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ 1. CLEANUP - Delete existing test map                           │
+│    search_by_name("_TestMap") → mass_delete_instances           │
+├─────────────────────────────────────────────────────────────────┤
+│ 2. LOAD - Load map                                              │
+│    terrain_only: terrain_generate(preset)                       │
+│    map_only: insert_free_model(assetId)                         │
+│    terrain_with_*: terrain_generate + insert_free_model         │
+├─────────────────────────────────────────────────────────────────┤
+│ 3. CAMERA - Focus camera                                        │
+│    get_bounds → focus_camera                                    │
+├─────────────────────────────────────────────────────────────────┤
+│ 4. VALIDATE - Verify spawn points and values                    │
+│    suggestedSpawns (min 3), objectSpawns, bounds                │
+├─────────────────────────────────────────────────────────────────┤
+│ 5. MARKERS - Create spawn point markers                         │
+│    mass_create_instances(_SpawnMarker*)                         │
+├─────────────────────────────────────────────────────────────────┤
+│ 6. USER CONFIRM - Ask user                                      │
+│    AskUserQuestion:                                             │
+│    - Adjust camera?                                             │
+│    - Adjust marker/spawn positions?                             │
+│    - Other modifications?                                       │
+│    - Play test from random spawn?                               │
+├─────────────────────────────────────────────────────────────────┤
+│ 7. ADJUST (optional) - Apply user adjustments                   │
+│    get_camera_info → update cameraConfig                        │
+│    Reposition markers, etc.                                     │
+├─────────────────────────────────────────────────────────────────┤
+│ 8. FINALIZE - Final confirmation                                │
+│    Delete markers → Update JSON (if needed) → Complete          │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-### Step 2: Camera Focus
+---
 
-```typescript
-// Use registered cameraConfig if exists, otherwise use category defaults
-const cameraConfig = asset?.cameraConfig ?? defaultCameraConfig[category];
+### 2. Map Source Verification (Sub-categories)
 
-await mcp.focus_camera({
-  targetPath: inserted.path,
-  distance: cameraConfig.distance,
-  angle: {
-    pitch: cameraConfig.pitch,
-    yaw: cameraConfig.yaw
-  }
-});
+Map sources verify detailed data in `sources/` folder.
+
+Same as **Map Verification workflow** plus additional checks:
+
+```
+[Map Verification Steps 1-8]
+        +
+┌─────────────────────────────────────────────────────────────────┐
+│ TERRAIN VARIANCE (terrain_only, terrain_with_* types only)      │
+│                                                                 │
+│ 1. Random seed change test (3-5 times)                          │
+│    terrain_clear → terrain_generate({ seed: random })           │
+│                                                                 │
+│ 2. Verify spawn validity for each seed                          │
+│    find_spawn_positions → ensure minimum 3 spawns               │
+│                                                                 │
+│ 3. Report variance results to user                              │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-### Step 3: Camera Adjustment
+#### Source-Specific Checks
 
-1. Check if the asset is fully visible
-2. If not optimal, **user adjusts camera manually in Studio**
-3. Get current camera values:
+**standalone-maps:**
+- Verify size > 500 studs
+- suggestedSpawns minimum 3, evenly distributed
+- objectSpawns minimum 3
 
-```typescript
-const cameraInfo = await mcp.get_camera_info({});
-// Returns { pitch, yaw, position, ... }
-// pitch and yaw can be used directly in cameraConfig
+**hybrid-maps:**
+- Verify size 200-650 studs
+- Test standalone placement
+- Test terrain combo placement
+- Verify compatibleTerrains list
+
+**addon-structures:**
+- Verify size < 200 studs
+- Test placement on compatible terrains
+- compatibleTerrains required
+
+---
+
+### 3. Asset Verification (monsters, weapons, items, etc.)
+
+#### Asset Verification Workflow
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ 1. CLEANUP - Delete existing test asset                         │
+│    search_by_name("_TestAsset") → mass_delete_instances         │
+├─────────────────────────────────────────────────────────────────┤
+│ 2. LOAD - Load asset                                            │
+│    insert_free_model(assetId) → rename to _TestAsset_*          │
+├─────────────────────────────────────────────────────────────────┤
+│ 3. CAMERA - Focus camera                                        │
+│    get_bounds → focus_camera(cameraConfig)                      │
+├─────────────────────────────────────────────────────────────────┤
+│ 4. ANIMATION (if applicable) - Verify animations                │
+│    If asset has AnimationController/Animator:                   │
+│    - Check animation list                                       │
+│    - Play test representative animation                         │
+├─────────────────────────────────────────────────────────────────┤
+│ 5. USER CONFIRM - Ask user                                      │
+│    AskUserQuestion:                                             │
+│    - Adjust camera focus?                                       │
+│    - Other modifications?                                       │
+├─────────────────────────────────────────────────────────────────┤
+│ 6. ADJUST (optional) - If camera adjustment needed              │
+│    get_camera_info → calculate cameraConfig → update            │
+├─────────────────────────────────────────────────────────────────┤
+│ 7. FINALIZE - Complete                                          │
+│    Delete test asset → Update JSON (if needed)                  │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-4. Calculate distance multiplier from position
-5. Update cameraConfig with new values
-6. Verify with focus_camera using saved values
+#### Category-Specific Checks
 
-### Step 4: Verify Bounds and Structure
+| Category | Additional Checks |
+|----------|-------------------|
+| monsters | cameraConfig, animation verification |
+| weapons | structure.className = "Tool" |
+| npcs | animations, dialogue capability |
+| effects | ParticleEmitter/Beam playback |
+
+---
+
+## Spawn Generation
+
+### Requirements
+
+- Minimum **3 spawn positions** per map
+- Evenly distributed across map bounds
+
+### Grid-Based Distribution
 
 ```typescript
 const bounds = await mcp.get_bounds({ path: inserted.path });
-const instance = await mcp.get_instance({ path: inserted.path });
-// Compare with registered values if exists
-```
+const gridX = Math.max(2, Math.floor(bounds.size.x / 100));
+const gridZ = Math.max(2, Math.floor(bounds.size.z / 100));
 
-### Step 5: Spawn Validation (maps only)
+const suggestedSpawns = [];
+for (let gx = 0; gx < gridX; gx++) {
+  for (let gz = 0; gz < gridZ; gz++) {
+    const testX = bounds.center.x - bounds.size.x/2 + (gx + 0.5) * bounds.size.x / gridX;
+    const testZ = bounds.center.z - bounds.size.z/2 + (gz + 0.5) * bounds.size.z / gridZ;
 
-```typescript
-// Verify existing spawns
-for (const spawn of asset.suggestedSpawns) {
-  const ground = await mcp.find_ground({
-    position: { x: spawn.x, y: 300, z: spawn.z },
-    offset: 3
-  });
+    const ground = await mcp.find_ground({
+      position: { x: testX, y: 500, z: testZ },
+      offset: 3
+    });
+
+    if (ground.found) {
+      suggestedSpawns.push({
+        x: Math.round(ground.position.x),
+        y: Math.round(ground.position.y),
+        z: Math.round(ground.position.z)
+      });
+    }
+  }
 }
-
-// Or find new spawns
-const spawns = await mcp.find_spawn_positions({
-  searchArea: bounds,
-  count: 5,
-  minSpacing: 20
-});
 ```
 
-### Step 6: Visual Spawn Markers (maps only)
-
-Create temporary markers to visually verify spawn positions:
+### Visual Markers
 
 ```typescript
-// Create spawn markers
+// Create markers
 const markers = suggestedSpawns.map((spawn, i) => ({
   className: "Part",
-  name: `_SpawnMarker${i + 1}`,
+  name: `_SpawnMarker${String(i + 1).padStart(2, '0')}`,
   parentPath: "game.Workspace",
   properties: {
     Position: { x: spawn.x, y: spawn.y + 4, z: spawn.z },
-    Size: { x: 4, y: 8, z: 4 },  // Player size
-    Anchored: true,
-    CanCollide: false,
-    Transparency: 0.3,
-    Color: { r: 0, g: 255, b: 100 },  // Green
-    Material: "Neon"
+    Size: { x: 4, y: 8, z: 4 },
+    Anchored: true, CanCollide: false, Transparency: 0.3,
+    Color: { r: 0, g: 255, b: 100 }, Material: "Neon"
   }
 }));
 
 await mcp.mass_create_instances({ instances: markers, focusCamera: false });
 
-// After visual confirmation, delete markers
-const markerPaths = markers.map(m => `game.Workspace.${m.name}`);
-await mcp.mass_delete_instances({ paths: markerPaths });
-```
-
-### Step 7: Register or Update
-
-```typescript
-// Add/update in assets/{category}.json
-// Update _meta.totalAssets if new
-// Run validate-all.sh
+// Delete markers after verification
+await mcp.mass_delete_instances({
+  paths: markers.map(m => `game.Workspace.${m.name}`)
+});
 ```
 
 ---
 
 ## Terrain Preset Creation
 
-### Phase 1: Design
+### Workflow
 
-Define concept with theme, difficulty, description.
-
-### Phase 2: Test Parameters
-
+1. **Design** - Define theme, difficulty, description
+2. **Test Parameters**:
 ```typescript
 await mcp.terrain_clear({ region: bounds });
 await mcp.terrain_generate({
@@ -289,34 +378,11 @@ await mcp.terrain_generate({
   ]
 });
 ```
+3. **Determine Variance** - Test 5+ seeds, analyze height distribution
+4. **Validate Spawns** - `find_spawn_positions`
+5. **Register** - Add to `terrain-presets-source.json` and `maps.json`
 
-### Phase 3: Determine Variance
-
-Test 5+ seeds, analyze height distribution:
-
-| Parameter | Recommended Variance |
-|-----------|---------------------|
-| baseHeight | 15-25% of base |
-| amplitude | 20-30% of base |
-| frequency | 20-30% of base |
-
-### Phase 4: Validate Spawns
-
-```typescript
-const spawns = await mcp.find_spawn_positions({
-  searchArea: preset.bounds,
-  count: preset.spawnConfig.count,
-  minSpacing: preset.spawnConfig.minSpacing
-});
-```
-
-### Phase 5: Register
-
-See `schemas/terrain-preset.schema.json` for required structure.
-
----
-
-## Parameter Guidelines by Theme
+### Parameter Guidelines
 
 | Theme | baseHeight | amplitude | frequency |
 |-------|------------|-----------|-----------|
@@ -331,17 +397,30 @@ See `schemas/terrain-preset.schema.json` for required structure.
 
 ---
 
-## MCP Verification (Studio Required)
+## Adding New Environment
 
+1. Add asset to appropriate `sources/*.json`
+2. Add environment entry to `maps.json`:
+```json
+{
+  "id": "env-m-009",
+  "type": "map_only",
+  "theme": "forest",
+  "name": "New Forest Map",
+  "assetId": 12345678,
+  "source": "standalone-maps",
+  "description": "Description here"
+}
 ```
-1. terrain_clear
-2. terrain_generate (base params)
-3. terrain_smooth (post-process)
-4. find_ground × 5 points
-5. find_spawn_positions
-6. Repeat 2-5 with 3 seeds
-7. Adjust variance if needed
+3. Update theme's `environmentIds`:
+```json
+"themes": {
+  "forest": {
+    "environmentIds": ["env-t-007", "env-m-006", "env-m-009"]
+  }
+}
 ```
+4. Run verification workflow
 
 ---
 
@@ -359,15 +438,19 @@ See `schemas/terrain-preset.schema.json` for required structure.
 ## Usage Examples
 
 ```bash
+# Show themes list for selection
+/roblox-templates-creator verify maps
+
+# Verify specific environment
+/roblox-templates-creator verify env-m-002
+/roblox-templates-creator verify "Goblin Town Map"
+
+# Search and register new map
+/roblox-templates-creator search "large forest adventure"
+
 # Create terrain preset
-/roblox-templates-creator terrain-presets "canyon with river"
+/roblox-templates-creator terrain "canyon with river"
 
-# Verify preset
-/roblox-templates-creator verify terrain-presets rolling_hills
-
-# Search and register asset
-/roblox-templates-creator maps "medieval castle"
-
-# Validate all
-/roblox-templates-creator validate all
+# Verify asset category
+/roblox-templates-creator verify monsters
 ```

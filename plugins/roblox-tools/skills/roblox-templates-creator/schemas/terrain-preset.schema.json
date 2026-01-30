@@ -190,7 +190,7 @@
 
     "terrainCameraConfig": {
       "type": "object",
-      "required": ["heightAboveGround", "distance", "pitch", "yaw"],
+      "required": ["heightAboveGround", "distance", "offset"],
       "properties": {
         "heightAboveGround": {
           "type": "number",
@@ -204,17 +204,16 @@
           "minimum": 10,
           "maximum": 200
         },
-        "pitch": {
-          "type": "number",
-          "description": "Camera pitch angle in degrees",
-          "minimum": 0,
-          "maximum": 90
-        },
-        "yaw": {
-          "type": "number",
-          "description": "Camera yaw angle in degrees",
-          "minimum": 0,
-          "maximum": 360
+        "offset": {
+          "type": "object",
+          "description": "Camera offset direction from target (will be normalized)",
+          "required": ["x", "y", "z"],
+          "properties": {
+            "x": { "type": "number" },
+            "y": { "type": "number" },
+            "z": { "type": "number" }
+          },
+          "additionalProperties": false
         }
       },
       "additionalProperties": false

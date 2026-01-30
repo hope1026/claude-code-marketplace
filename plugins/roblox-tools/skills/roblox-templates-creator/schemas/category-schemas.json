@@ -24,11 +24,18 @@
     },
     "cameraConfig": {
       "type": "object",
-      "required": ["distance", "pitch", "yaw"],
+      "required": ["distance", "offset"],
       "properties": {
         "distance": { "type": "number", "minimum": 0.1, "maximum": 10.0 },
-        "pitch": { "type": "number", "minimum": -90, "maximum": 90 },
-        "yaw": { "type": "number", "minimum": 0, "maximum": 360 }
+        "offset": {
+          "type": "object",
+          "required": ["x", "y", "z"],
+          "properties": {
+            "x": { "type": "number" },
+            "y": { "type": "number" },
+            "z": { "type": "number" }
+          }
+        }
       }
     }
   },
@@ -39,7 +46,7 @@
       "requiredFields": ["id", "name", "type", "cameraConfig"],
       "optionalFields": ["query", "creator", "description", "structure", "recommended"],
       "typeEnum": ["undead", "beast", "humanoid", "boss", "creature", "elemental", "mechanical"],
-      "defaultCameraConfig": { "distance": 2.0, "pitch": 15, "yaw": 45 },
+      "defaultCameraConfig": { "distance": 2.0, "offset": { "x": 1, "y": 0.4, "z": 1 } },
       "structureHints": {
         "preferR15": true,
         "requiresHumanoid": true,
@@ -52,7 +59,7 @@
       "requiredFields": ["id", "name", "type", "cameraConfig"],
       "optionalFields": ["query", "creator", "description", "structure", "recommended"],
       "typeEnum": ["melee", "ranged", "magic", "defense"],
-      "defaultCameraConfig": { "distance": 3.0, "pitch": 20, "yaw": 30 },
+      "defaultCameraConfig": { "distance": 3.0, "offset": { "x": 0.6, "y": 0.4, "z": 1 } },
       "structureHints": {
         "requiresHandle": true,
         "requiresTool": true,
@@ -65,7 +72,7 @@
       "requiredFields": ["id", "name", "type", "cameraConfig"],
       "optionalFields": ["query", "creator", "description", "structure", "recommended"],
       "typeEnum": ["currency", "consumable", "container", "quest", "material"],
-      "defaultCameraConfig": { "distance": 3.0, "pitch": 25, "yaw": 30 },
+      "defaultCameraConfig": { "distance": 3.0, "offset": { "x": 0.6, "y": 0.5, "z": 1 } },
       "structureHints": {
         "maxPartCount": 20
       }
@@ -76,7 +83,7 @@
       "requiredFields": ["id", "name", "type", "cameraConfig"],
       "optionalFields": ["query", "creator", "description", "structure", "recommended"],
       "typeEnum": ["combat", "magic", "status", "ambient", "collection"],
-      "defaultCameraConfig": { "distance": 2.5, "pitch": 20, "yaw": 30 },
+      "defaultCameraConfig": { "distance": 2.5, "offset": { "x": 0.6, "y": 0.4, "z": 1 } },
       "structureHints": {
         "hasParticleEmitter": true
       }
@@ -93,7 +100,7 @@
         "props": ["furniture", "containers", "lighting", "misc"],
         "structures": ["bridges", "roads"]
       },
-      "defaultCameraConfig": { "distance": 2.0, "pitch": 20, "yaw": 45 },
+      "defaultCameraConfig": { "distance": 2.0, "offset": { "x": 1, "y": 0.4, "z": 1 } },
       "structureHints": {
         "anchored": true,
         "maxPartCount": 200
@@ -105,7 +112,7 @@
       "requiredFields": ["id", "name", "type", "cameraConfig"],
       "optionalFields": ["query", "creator", "description", "structure", "recommended"],
       "typeEnum": ["villager", "merchant", "quest", "service", "guard"],
-      "defaultCameraConfig": { "distance": 2.0, "pitch": 15, "yaw": 45 },
+      "defaultCameraConfig": { "distance": 2.0, "offset": { "x": 1, "y": 0.4, "z": 1 } },
       "structureHints": {
         "preferR15": true,
         "requiresHumanoid": true
@@ -113,15 +120,61 @@
     },
 
     "maps": {
-      "description": "Pre-built map environments",
+      "deprecated": true,
+      "migratedTo": ["standalone-maps", "hybrid-maps", "addon-structures"],
+      "description": "DEPRECATED - Use maps/ folder instead",
       "requiredFields": ["id", "name", "type", "theme", "cameraConfig", "suggestedSpawns"],
       "optionalFields": ["query", "creator", "description", "structure", "bounds", "objectSpawns", "cameraFocus", "recommended"],
       "typeEnum": ["map", "landscape", "generator"],
       "themeEnum": ["procedural", "island", "mountain", "forest", "village", "dungeon", "castle", "arena", "desert", "snow", "lava", "sky_island", "city", "winter_village"],
-      "defaultCameraConfig": { "distance": 1.2, "pitch": 25, "yaw": 30 },
+      "defaultCameraConfig": { "distance": 1.2, "offset": { "x": 0.6, "y": 0.5, "z": 1 } },
       "validation": {
         "minSuggestedSpawns": 3,
         "minObjectSpawns": 3
+      }
+    },
+
+    "standalone-maps": {
+      "description": "Large pre-built maps that can be used independently (500+ studs)",
+      "location": "assets/maps/sources/standalone-maps-source.json",
+      "requiredFields": ["id", "name", "type", "theme", "cameraConfig", "suggestedSpawns", "bounds"],
+      "optionalFields": ["query", "creator", "description", "structure", "objectSpawns", "cameraFocus"],
+      "typeEnum": ["map"],
+      "themeEnum": ["island", "forest", "dungeon", "desert", "lava", "city"],
+      "defaultCameraConfig": { "distance": 1.0, "offset": { "x": 0.5, "y": 0.5, "z": 0.8 } },
+      "validation": {
+        "minSuggestedSpawns": 3,
+        "minObjectSpawns": 3,
+        "minBoundingSize": 500
+      }
+    },
+
+    "hybrid-maps": {
+      "description": "Medium-sized maps usable standalone or with terrain (200-650 studs)",
+      "location": "assets/maps/sources/hybrid-maps-source.json",
+      "requiredFields": ["id", "name", "type", "theme", "cameraConfig", "suggestedSpawns", "bounds"],
+      "optionalFields": ["query", "creator", "description", "structure", "objectSpawns", "cameraFocus", "usageHint", "compatibleTerrains"],
+      "typeEnum": ["map"],
+      "themeEnum": ["forest", "arena", "snow", "sky_island", "winter_village"],
+      "usageHintEnum": ["standalone_preferred", "terrain_combo_preferred"],
+      "defaultCameraConfig": { "distance": 1.2, "offset": { "x": 0.5, "y": 0.4, "z": 0.8 } },
+      "validation": {
+        "minSuggestedSpawns": 3,
+        "boundingSizeRange": { "min": 200, "max": 650 }
+      }
+    },
+
+    "addon-structures": {
+      "description": "Small structures to place on generated terrain (under 200 studs)",
+      "location": "assets/maps/sources/addon-structures-source.json",
+      "requiredFields": ["id", "name", "type", "theme", "cameraConfig", "compatibleTerrains"],
+      "optionalFields": ["query", "creator", "description", "structure", "bounds", "suggestedSpawns", "objectSpawns"],
+      "typeEnum": ["structure"],
+      "themeEnum": ["village", "fortress", "castle"],
+      "defaultCameraConfig": { "distance": 1.2, "offset": { "x": 0.4, "y": 0.9, "z": 0.4 } },
+      "validation": {
+        "maxBoundingSize": 200,
+        "requiresCompatibleTerrains": true
       }
     }
   },

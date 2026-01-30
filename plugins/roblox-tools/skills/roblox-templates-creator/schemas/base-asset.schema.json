@@ -78,7 +78,7 @@
     },
     "cameraConfig": {
       "type": "object",
-      "required": ["distance", "pitch", "yaw"],
+      "required": ["distance", "offset"],
       "properties": {
         "distance": {
           "type": "number",
@@ -86,17 +86,16 @@
           "minimum": 0.1,
           "maximum": 10.0
         },
-        "pitch": {
-          "type": "number",
-          "description": "Camera pitch angle in degrees",
-          "minimum": -90,
-          "maximum": 90
-        },
-        "yaw": {
-          "type": "number",
-          "description": "Camera yaw angle in degrees",
-          "minimum": 0,
-          "maximum": 360
+        "offset": {
+          "type": "object",
+          "description": "Camera offset direction from target (will be normalized)",
+          "required": ["x", "y", "z"],
+          "properties": {
+            "x": { "type": "number", "description": "Horizontal offset" },
+            "y": { "type": "number", "description": "Vertical offset (positive = above)" },
+            "z": { "type": "number", "description": "Depth offset" }
+          },
+          "additionalProperties": false
         }
       },
       "additionalProperties": false
