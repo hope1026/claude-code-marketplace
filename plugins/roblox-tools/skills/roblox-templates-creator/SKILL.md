@@ -317,6 +317,30 @@ const finalYOffset =
   + (env.decorationOffsets?.[setId]?.y || 0);
 ```
 
+### Moving Models with pivot_to
+
+**IMPORTANT:** Use `pivot_to` tool to move entire Models in one operation. Never move individual parts.
+
+```typescript
+// CORRECT: Move entire model with pivot_to
+await mcp.pivot_to({
+  path: "game.Workspace.Low poly",
+  offset: { x: 0, y: finalYOffset, z: 0 }  // Relative offset from current position
+});
+
+// WRONG: Moving individual parts (slow, error-prone)
+// for each part in model.descendants
+//   set_relative_property(part, Position, add, {y: offset})  // DON'T DO THIS
+```
+
+**pivot_to parameters:**
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `path` | string | Path to Model or PVInstance |
+| `offset` | Vector3 | Relative offset from current position (x, y, z in studs) |
+| `position` | Vector3 | Absolute position (ignores offset) |
+| `cframe` | number[12] | Full CFrame for position + rotation |
+
 ### Verification Workflow
 
 ```
@@ -337,9 +361,9 @@ const finalYOffset =
 │              - (bounds.min.y + groundOffsetY)                   │
 │              + decorationOffsets.y                              │
 ├─────────────────────────────────────────────────────────────────┤
-│ 5. MOVE DECORATION - Apply Y offset to all parts                 │
-│    get_descendants → filter MeshParts/Parts                     │
-│    batch_execute(set_relative_property, Position, add, {y: offsetY}) │
+│ 5. MOVE DECORATION - Apply Y offset using pivot_to               │
+│    pivot_to(path, { offset: { x: 0, y: offsetY, z: 0 } })       │
+│    Moves entire Model in one operation (no individual parts)    │
 ├─────────────────────────────────────────────────────────────────┤
 │ 6. VERIFY BOUNDS - Check final placement                         │
 │    get_bounds → verify min.y > terrainSurfaceY                  │
