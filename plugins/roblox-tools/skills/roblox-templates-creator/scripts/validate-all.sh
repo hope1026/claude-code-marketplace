@@ -74,11 +74,10 @@ if ! command -v jq &> /dev/null; then
     exit 1
 fi
 
-# Load category schemas
-CATEGORY_SCHEMAS="$SCHEMA_DIR/category-schemas.json"
+# Category schemas (optional - use defaults if not found)
+CATEGORY_SCHEMAS="$SCHEMA_DIR/definitions/category-schemas.json"
 if [ ! -f "$CATEGORY_SCHEMAS" ]; then
-    echo "ERROR: category-schemas.json not found"
-    exit 1
+    CATEGORY_SCHEMAS=""
 fi
 
 # Colors for output
@@ -91,34 +90,34 @@ TOTAL_ERRORS=0
 TOTAL_WARNINGS=0
 TOTAL_ASSETS=0
 
-validate_camera_config() {
+validate_focus_view() {
     local asset="$1"
     local default_config="$2"
     local errors=0
 
-    local has_camera=$(echo "$asset" | jq 'has("cameraConfig")')
+    local has_camera=$(echo "$asset" | jq 'has("focusView")')
     if [ "$has_camera" != "true" ]; then
-        echo -e "    ${RED}[FAIL]${NC} cameraConfig: MISSING"
+        echo -e "    ${RED}[FAIL]${NC} focusView: MISSING"
         return 1
     fi
 
-    local distance=$(echo "$asset" | jq '.cameraConfig.distance // "null"')
-    local offset_x=$(echo "$asset" | jq '.cameraConfig.offset.x // "null"')
-    local offset_y=$(echo "$asset" | jq '.cameraConfig.offset.y // "null"')
-    local offset_z=$(echo "$asset" | jq '.cameraConfig.offset.z // "null"')
+    local distance=$(echo "$asset" | jq '.focusView.distance // "null"')
+    local offset_x=$(echo "$asset" | jq '.focusView.offset.x // "null"')
+    local offset_y=$(echo "$asset" | jq '.focusView.offset.y // "null"')
+    local offset_z=$(echo "$asset" | jq '.focusView.offset.z // "null"')
 
     if [ "$distance" == "null" ] || [ "$offset_x" == "null" ] || [ "$offset_y" == "null" ] || [ "$offset_z" == "null" ]; then
-        echo -e "    ${RED}[FAIL]${NC} cameraConfig: incomplete (distance=$distance, offset={x:$offset_x, y:$offset_y, z:$offset_z})"
+        echo -e "    ${RED}[FAIL]${NC} focusView: incomplete (distance=$distance, offset={x:$offset_x, y:$offset_y, z:$offset_z})"
         return 1
     fi
 
     # Validate ranges
     if (( $(echo "$distance < 0.1 || $distance > 10.0" | bc -l 2>/dev/null || echo "0") )); then
-        echo -e "    ${YELLOW}[WARN]${NC} cameraConfig.distance: $distance (expected 0.1-10.0)"
+        echo -e "    ${YELLOW}[WARN]${NC} focusView.distance: $distance (expected 0.1-10.0)"
         return 2
     fi
 
-    echo -e "    ${GREEN}[PASS]${NC} cameraConfig: distance=$distance, offset={x:$offset_x, y:$offset_y, z:$offset_z}"
+    echo -e "    ${GREEN}[PASS]${NC} focusView: distance=$distance, offset={x:$offset_x, y:$offset_y, z:$offset_z}"
     return 0
 }
 
@@ -143,8 +142,11 @@ validate_asset() {
     done
 
     # Camera config validation
-    local default_camera=$(jq -r ".categories[\"$category\"].defaultCameraConfig" "$CATEGORY_SCHEMAS")
-    validate_camera_config "$asset" "$default_camera"
+    local default_camera=""
+    if [ -n "$CATEGORY_SCHEMAS" ]; then
+        default_camera=$(jq -r ".categories[\"$category\"].defaultFocusView" "$CATEGORY_SCHEMAS" 2>/dev/null)
+    fi
+    validate_focus_view "$asset" "$default_camera"
     local cam_result=$?
     if [ $cam_result -eq 1 ]; then
         ((asset_errors++))
@@ -258,7 +260,7 @@ validate_terrain_presets() {
         echo "  Preset: $preset_key"
 
         # Required fields
-        for field in name theme bounds generation spawnConfig cameraConfig; do
+        for field in name theme bounds generation spawnConfig focusView; do
             local value=$(jq -r ".presets[\"$preset_key\"].$field // \"null\"" "$json_file")
             if [ "$value" == "null" ]; then
                 echo -e "    ${RED}[FAIL]${NC} $field: MISSING"
@@ -292,15 +294,15 @@ validate_terrain_presets() {
         fi
 
         # Camera config (distance + offset format)
-        local cam_distance=$(jq -r ".presets[\"$preset_key\"].cameraConfig.distance // \"null\"" "$json_file")
-        local cam_offset_x=$(jq -r ".presets[\"$preset_key\"].cameraConfig.offset.x // \"null\"" "$json_file")
-        local cam_offset_y=$(jq -r ".presets[\"$preset_key\"].cameraConfig.offset.y // \"null\"" "$json_file")
-        local cam_offset_z=$(jq -r ".presets[\"$preset_key\"].cameraConfig.offset.z // \"null\"" "$json_file")
+        local cam_distance=$(jq -r ".presets[\"$preset_key\"].focusView.distance // \"null\"" "$json_file")
+        local cam_offset_x=$(jq -r ".presets[\"$preset_key\"].focusView.offset.x // \"null\"" "$json_file")
+        local cam_offset_y=$(jq -r ".presets[\"$preset_key\"].focusView.offset.y // \"null\"" "$json_file")
+        local cam_offset_z=$(jq -r ".presets[\"$preset_key\"].focusView.offset.z // \"null\"" "$json_file")
         if [ "$cam_distance" == "null" ] || [ "$cam_offset_x" == "null" ] || [ "$cam_offset_y" == "null" ] || [ "$cam_offset_z" == "null" ]; then
-            echo -e "    ${RED}[FAIL]${NC} cameraConfig: incomplete (distance=$cam_distance, offset={x:$cam_offset_x, y:$cam_offset_y, z:$cam_offset_z})"
+            echo -e "    ${RED}[FAIL]${NC} focusView: incomplete (distance=$cam_distance, offset={x:$cam_offset_x, y:$cam_offset_y, z:$cam_offset_z})"
             ((TOTAL_ERRORS++))
         else
-            echo -e "    ${GREEN}[PASS]${NC} cameraConfig: distance=$cam_distance, offset={x:$cam_offset_x, y:$cam_offset_y, z:$cam_offset_z}"
+            echo -e "    ${GREEN}[PASS]${NC} focusView: distance=$cam_distance, offset={x:$cam_offset_x, y:$cam_offset_y, z:$cam_offset_z}"
         fi
 
         ((TOTAL_ASSETS++))
@@ -335,11 +337,17 @@ validate_environment_category() {
         ((TOTAL_WARNINGS++))
     fi
 
-    # Get validation rules from category-schemas.json
-    local min_spawns=$(jq -r ".categories[\"$category\"].validation.minSuggestedSpawns // 3" "$CATEGORY_SCHEMAS")
-    local min_bounding=$(jq -r ".categories[\"$category\"].validation.minBoundingSize // 0" "$CATEGORY_SCHEMAS")
-    local max_bounding=$(jq -r ".categories[\"$category\"].validation.maxBoundingSize // 9999" "$CATEGORY_SCHEMAS")
-    local requires_terrains=$(jq -r ".categories[\"$category\"].validation.requiresCompatibleTerrains // false" "$CATEGORY_SCHEMAS")
+    # Get validation rules (use defaults if category-schemas.json not available)
+    local min_spawns=3
+    local min_bounding=0
+    local max_bounding=9999
+    local requires_terrains=false
+    if [ -n "$CATEGORY_SCHEMAS" ]; then
+        min_spawns=$(jq -r ".categories[\"$category\"].validation.minSuggestedSpawns // 3" "$CATEGORY_SCHEMAS" 2>/dev/null)
+        min_bounding=$(jq -r ".categories[\"$category\"].validation.minBoundingSize // 0" "$CATEGORY_SCHEMAS" 2>/dev/null)
+        max_bounding=$(jq -r ".categories[\"$category\"].validation.maxBoundingSize // 9999" "$CATEGORY_SCHEMAS" 2>/dev/null)
+        requires_terrains=$(jq -r ".categories[\"$category\"].validation.requiresCompatibleTerrains // false" "$CATEGORY_SCHEMAS" 2>/dev/null)
+    fi
 
     local cat_errors=0
     local cat_warnings=0
@@ -354,7 +362,7 @@ validate_environment_category() {
         echo "  Asset: $name (ID: $id)"
 
         # Required fields
-        for field in id name type theme cameraConfig; do
+        for field in id name type theme focusView; do
             local value=$(echo "$asset" | jq -r ".$field // \"null\"")
             if [ "$value" == "null" ] || [ -z "$value" ]; then
                 echo -e "    ${RED}[FAIL]${NC} $field: MISSING"
@@ -363,7 +371,7 @@ validate_environment_category() {
         done
 
         # Camera config validation
-        validate_camera_config "$asset" ""
+        validate_focus_view "$asset" ""
         local cam_result=$?
         if [ $cam_result -eq 1 ]; then
             ((asset_errors++))

@@ -4,7 +4,7 @@
   "title": "Base Asset Schema",
   "description": "Common fields required for all Roblox template assets",
   "type": "object",
-  "required": ["id", "name", "type", "cameraConfig"],
+  "required": ["id", "name", "type", "focusView"],
   "properties": {
     "id": {
       "type": "integer",
@@ -42,8 +42,8 @@
     "structure": {
       "$ref": "#/$defs/structure"
     },
-    "cameraConfig": {
-      "$ref": "#/$defs/cameraConfig"
+    "focusView": {
+      "$ref": "#/$defs/focusView"
     }
   },
   "$defs": {
@@ -59,11 +59,12 @@
     },
     "boundingBox": {
       "type": "object",
+      "description": "Bounding box dimensions (studs)",
       "required": ["x", "y", "z"],
       "properties": {
-        "x": { "type": "number", "minimum": 0 },
-        "y": { "type": "number", "minimum": 0 },
-        "z": { "type": "number", "minimum": 0 }
+        "x": { "type": "number", "minimum": 0, "description": "Width (studs)" },
+        "y": { "type": "number", "minimum": 0, "description": "Height (studs)" },
+        "z": { "type": "number", "minimum": 0, "description": "Depth (studs)" }
       },
       "additionalProperties": false
     },
@@ -76,24 +77,30 @@
       },
       "additionalProperties": false
     },
-    "cameraConfig": {
+    "groundOffsetY": {
+      "type": "number",
+      "default": 0,
+      "description": "Offset from bounds.min.y to visual ground level (studs). Actual ground = bounds.min.y + groundOffsetY"
+    },
+    "focusView": {
       "type": "object",
+      "description": "Camera positioning for focus_camera tool when viewing this asset",
       "required": ["distance", "offset"],
       "properties": {
         "distance": {
           "type": "number",
-          "description": "Camera distance multiplier (1.0 = fit to bounds)",
-          "minimum": 0.1,
-          "maximum": 10.0
+          "description": "Camera distance from target (studs)",
+          "minimum": 1,
+          "maximum": 2000
         },
         "offset": {
           "type": "object",
-          "description": "Camera offset direction from target (will be normalized)",
+          "description": "Camera offset from target for lookAt calculation (studs)",
           "required": ["x", "y", "z"],
           "properties": {
-            "x": { "type": "number", "description": "Horizontal offset" },
-            "y": { "type": "number", "description": "Vertical offset (positive = above)" },
-            "z": { "type": "number", "description": "Depth offset" }
+            "x": { "type": "number", "description": "Horizontal offset (studs)" },
+            "y": { "type": "number", "description": "Vertical offset (studs, positive = above)" },
+            "z": { "type": "number", "description": "Depth offset (studs)" }
           },
           "additionalProperties": false
         }

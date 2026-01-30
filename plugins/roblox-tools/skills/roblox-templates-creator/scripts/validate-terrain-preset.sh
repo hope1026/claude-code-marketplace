@@ -118,7 +118,7 @@ check_field "theme"
 check_field "bounds"
 check_field "generation"
 check_field "spawnConfig"
-check_field "cameraConfig"
+check_field "focusView"
 
 echo ""
 
@@ -252,18 +252,18 @@ echo ""
 
 # Camera config validation
 echo "--- Camera Configuration ---"
-CAM_HEIGHT=$(jq -r ".presets[\"$PRESET_KEY\"].cameraConfig.heightAboveGround // \"null\"" "$JSON_FILE")
-CAM_DISTANCE=$(jq -r ".presets[\"$PRESET_KEY\"].cameraConfig.distance // \"null\"" "$JSON_FILE")
-CAM_OFFSET_X=$(jq -r ".presets[\"$PRESET_KEY\"].cameraConfig.offset.x // \"null\"" "$JSON_FILE")
-CAM_OFFSET_Y=$(jq -r ".presets[\"$PRESET_KEY\"].cameraConfig.offset.y // \"null\"" "$JSON_FILE")
-CAM_OFFSET_Z=$(jq -r ".presets[\"$PRESET_KEY\"].cameraConfig.offset.z // \"null\"" "$JSON_FILE")
+CAM_HEIGHT=$(jq -r ".presets[\"$PRESET_KEY\"].focusView.heightAboveGround // \"null\"" "$JSON_FILE")
+CAM_DISTANCE=$(jq -r ".presets[\"$PRESET_KEY\"].focusView.distance // \"null\"" "$JSON_FILE")
+CAM_OFFSET_X=$(jq -r ".presets[\"$PRESET_KEY\"].focusView.offset.x // \"null\"" "$JSON_FILE")
+CAM_OFFSET_Y=$(jq -r ".presets[\"$PRESET_KEY\"].focusView.offset.y // \"null\"" "$JSON_FILE")
+CAM_OFFSET_Z=$(jq -r ".presets[\"$PRESET_KEY\"].focusView.offset.z // \"null\"" "$JSON_FILE")
 
 if [ "$CAM_HEIGHT" != "null" ] && [ "$CAM_DISTANCE" != "null" ]; then
     echo "  [PASS] heightAboveGround: $CAM_HEIGHT"
     echo "  [PASS] distance: $CAM_DISTANCE"
     echo "  [PASS] offset: {x:$CAM_OFFSET_X, y:$CAM_OFFSET_Y, z:$CAM_OFFSET_Z}"
 else
-    echo "  [FAIL] cameraConfig: incomplete"
+    echo "  [FAIL] focusView: incomplete"
     ((ERRORS++))
 fi
 

@@ -26,12 +26,32 @@ roblox-templates/assets/maps/
 ### Schemas
 
 ```
-roblox-templates/schemas/
-├── spawn-zone.schema.json                 # Spawn zone definitions
-├── layout-rules.schema.json               # Asset placement rules
-├── map-randomization.schema.json          # Randomization settings
-└── decorations.schema.json                # Decoration sets
+roblox-templates-creator/schemas/
+├── definitions/
+│   └── base-asset.schema.json             # Common fields for all assets
+├── assets/
+│   └── maps/
+│       ├── maps.schema.json               # Main maps index
+│       ├── spawn-zone.schema.json         # Spawn zone definitions
+│       ├── layout-rules.schema.json       # Asset placement rules
+│       ├── map-randomization.schema.json  # Randomization settings
+│       └── sources/
+│           ├── terrain-presets.schema.json # Terrain generation configs
+│           └── decorations.schema.json     # Decoration sets
 ```
+
+### Schema Mapping by Asset Type
+
+| Asset Category | Schema Reference | Description |
+|----------------|-----------------|-------------|
+| monsters | `base-asset.schema.json` | Default asset schema |
+| weapons | `base-asset.schema.json` | Default asset schema |
+| items | `base-asset.schema.json` | Default asset schema |
+| effects | `base-asset.schema.json` | Default asset schema |
+| npcs | `base-asset.schema.json` | Default asset schema |
+| terrain-presets | `terrain-presets.schema.json` | Terrain generation config schema |
+| standalone-maps | `base-asset.schema.json` | Default asset schema + spawnZones in maps.json |
+| decorations | `decorations.schema.json` | Decoration sets schema |
 
 ### Other Assets
 
@@ -254,6 +274,103 @@ function getColorByTag(tags: string[]): { r: number, g: number, b: number } {
   if (tags.includes("decoration")) return { r: 255, g: 220, b: 50 };// Yellow
   return { r: 200, g: 200, b: 200 };  // Gray default
 }
+```
+
+---
+
+## Decoration Placement Verification
+
+`terrain_with_decorations` 환경에서 decoration을 terrain 위에 배치할 때 Y 오프셋 검증이 필요합니다.
+
+### Offset Fields
+
+**decorations.json:**
+```json
+{
+  "id": 14754252516,
+  "bounds": {
+    "min": { "x": 169, "y": -133, "z": -199 },
+    "max": { "x": 265, "y": -61, "z": -61 }
+  },
+  "groundOffsetY": 0  // bounds.min.y 기준, 실제 바닥까지 오프셋
+}
+```
+
+**maps.json (per-environment override):**
+```json
+{
+  "id": "env-ts-001",
+  "decorationSets": ["fps_structures"],
+  "decorationOffsets": {
+    "fps_structures": { "y": 5 }  // 맵별 추가 오프셋
+  }
+}
+```
+
+### Placement Calculation
+
+```typescript
+// 최종 Y 오프셋 계산
+const finalYOffset =
+  terrainSurfaceY
+  - (decoration.bounds.min.y + decoration.groundOffsetY)
+  + (env.decorationOffsets?.[setId]?.y || 0);
+```
+
+### Verification Workflow
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ 1. TERRAIN - Generate terrain                                    │
+│    terrain_generate(preset) → get terrain bounds                │
+├─────────────────────────────────────────────────────────────────┤
+│ 2. FIND GROUND - Get terrain surface height                      │
+│    find_ground at decoration center position                    │
+│    → terrainSurfaceY                                            │
+├─────────────────────────────────────────────────────────────────┤
+│ 3. INSERT DECORATION - Load decoration asset                     │
+│    insert_free_model(assetId)                                   │
+│    get_bounds → original bounds                                 │
+├─────────────────────────────────────────────────────────────────┤
+│ 4. CALCULATE OFFSET - Compute final Y offset                     │
+│    offsetY = terrainSurfaceY                                    │
+│              - (bounds.min.y + groundOffsetY)                   │
+│              + decorationOffsets.y                              │
+├─────────────────────────────────────────────────────────────────┤
+│ 5. MOVE DECORATION - Apply Y offset to all parts                 │
+│    get_descendants → filter MeshParts/Parts                     │
+│    batch_execute(set_relative_property, Position, add, {y: offsetY}) │
+├─────────────────────────────────────────────────────────────────┤
+│ 6. VERIFY BOUNDS - Check final placement                         │
+│    get_bounds → verify min.y > terrainSurfaceY                  │
+│    focus_camera for visual inspection                           │
+├─────────────────────────────────────────────────────────────────┤
+│ 7. USER CONFIRM - Visual check                                   │
+│    - Is decoration sitting on terrain surface?                  │
+│    - Any floating or sunken parts?                              │
+│    - Adjust groundOffsetY if needed?                            │
+│    - Adjust decorationOffsets.y if needed?                      │
+├─────────────────────────────────────────────────────────────────┤
+│ 8. UPDATE JSON - Save verified values                            │
+│    Update groundOffsetY in decorations.json                     │
+│    Update decorationOffsets in maps.json                        │
+│    Update spawnZones Y coords to match new placement            │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### SpawnZone Y Coordinate Update
+
+Decoration 이동 시 spawnZones의 Y 좌표도 업데이트해야 합니다:
+
+```typescript
+// 원본 spawnZone (decoration 원본 좌표 기준)
+"volume": { "min": { "y": -130 }, "max": { "y": -55 } }
+
+// 최종 spawnZone (terrain 위 배치 후)
+const newMinY = originalMinY + finalYOffset;
+const newMaxY = originalMaxY + finalYOffset;
+
+"volume": { "min": { "y": 27 }, "max": { "y": 102 } }
 ```
 
 ---
@@ -512,7 +629,9 @@ function pointsToZone(points: Vector3[], padding: number = 30): SpawnZone {
 
 ---
 
-## Camera Configuration
+## focusView Configuration
+
+The `focusView` field defines camera positioning for the `focus_camera` MCP tool when viewing assets.
 
 ### Understanding distance
 
@@ -525,7 +644,17 @@ function pointsToZone(points: Vector3[], padding: number = 30): SpawnZone {
 | Large (50-200 studs) | 150-400 studs |
 | Maps (500+ studs) | 500-1000 studs |
 
-### Calculating cameraConfig from Studio
+### Understanding offset
+
+**`offset` is camera offset in studs** from target for lookAt calculation.
+
+| Axis | Unit | Description |
+|------|------|-------------|
+| x | studs | Horizontal offset (negative=left, positive=right) |
+| y | studs | Vertical offset (negative=below, positive=above) |
+| z | studs | Depth offset (negative=front, positive=back) |
+
+### Calculating focusView from Studio
 
 ```typescript
 const cameraInfo = await mcp.get_camera_info({});
@@ -537,13 +666,14 @@ const dz = cameraInfo.position.z - bounds.center.z;
 
 const distance = Math.round(Math.sqrt(dx*dx + dy*dy + dz*dz));
 
+// offset is the actual studs offset from target
 const offset = {
-  x: Math.round(dx / distance * 10) / 10,
-  y: Math.round(dy / distance * 10) / 10,
-  z: Math.round(dz / distance * 10) / 10
+  x: Math.round(dx),
+  y: Math.round(dy),
+  z: Math.round(dz)
 };
 
-const cameraConfig = { distance, offset };
+const focusView = { distance, offset };
 ```
 
 ---

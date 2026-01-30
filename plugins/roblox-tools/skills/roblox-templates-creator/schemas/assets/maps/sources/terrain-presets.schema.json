@@ -4,7 +4,7 @@
   "title": "Terrain Preset Schema",
   "description": "Schema for MCP-generated terrain presets with randomization support",
   "type": "object",
-  "required": ["name", "theme", "difficulty", "description", "bounds", "generation", "spawnConfig", "cameraConfig"],
+  "required": ["name", "theme", "difficulty", "description", "bounds", "generation", "spawnConfig", "focusView"],
 
   "properties": {
     "name": {
@@ -49,8 +49,8 @@
     "objectSpawnConfig": {
       "$ref": "#/$defs/objectSpawnConfig"
     },
-    "cameraConfig": {
-      "$ref": "#/$defs/terrainCameraConfig"
+    "focusView": {
+      "$ref": "#/$defs/terrainFocusView"
     },
     "postProcess": {
       "type": "array",
@@ -86,6 +86,7 @@
 
     "bounds": {
       "type": "object",
+      "description": "Bounding box coordinates (studs)",
       "required": ["min", "max"],
       "properties": {
         "min": { "$ref": "#/$defs/vector3" },
@@ -122,7 +123,7 @@
         },
         "maxHeight": {
           "type": "number",
-          "description": "Maximum height for this material layer"
+          "description": "Maximum height for this material layer (studs)"
         }
       },
       "additionalProperties": false
@@ -164,9 +165,9 @@
       "required": ["count", "minSpacing", "fallbackSpawns"],
       "properties": {
         "count": { "type": "integer", "minimum": 1, "maximum": 10 },
-        "minSpacing": { "type": "number", "minimum": 10 },
+        "minSpacing": { "type": "number", "minimum": 10, "description": "Minimum spacing between spawn points (studs)" },
         "preferOutdoor": { "type": "boolean", "default": true },
-        "heightOffset": { "type": "number", "default": 3 },
+        "heightOffset": { "type": "number", "default": 3, "description": "Height offset above ground (studs)" },
         "avoidCenter": { "type": "boolean", "default": false },
         "fallbackSpawns": {
           "type": "array",
@@ -182,36 +183,37 @@
       "required": ["count", "minSpacing"],
       "properties": {
         "count": { "type": "integer", "minimum": 1, "maximum": 20 },
-        "minSpacing": { "type": "number", "minimum": 5 },
-        "heightOffset": { "type": "number", "default": 2 }
+        "minSpacing": { "type": "number", "minimum": 5, "description": "Minimum spacing between object spawns (studs)" },
+        "heightOffset": { "type": "number", "default": 2, "description": "Height offset above ground (studs)" }
       },
       "additionalProperties": false
     },
 
-    "terrainCameraConfig": {
+    "terrainFocusView": {
       "type": "object",
+      "description": "Camera positioning for focus_camera tool when viewing terrain",
       "required": ["heightAboveGround", "distance", "offset"],
       "properties": {
         "heightAboveGround": {
           "type": "number",
-          "description": "Camera height above terrain ground",
+          "description": "Camera height above terrain ground (studs)",
           "minimum": 10,
           "maximum": 500
         },
         "distance": {
           "type": "number",
-          "description": "Camera distance from target",
+          "description": "Camera distance from target (studs)",
           "minimum": 10,
-          "maximum": 200
+          "maximum": 500
         },
         "offset": {
           "type": "object",
-          "description": "Camera offset direction from target (will be normalized)",
+          "description": "Camera offset from target for lookAt calculation (studs)",
           "required": ["x", "y", "z"],
           "properties": {
-            "x": { "type": "number" },
-            "y": { "type": "number" },
-            "z": { "type": "number" }
+            "x": { "type": "number", "description": "Horizontal offset (studs)" },
+            "y": { "type": "number", "description": "Vertical offset (studs)" },
+            "z": { "type": "number", "description": "Depth offset (studs)" }
           },
           "additionalProperties": false
         }
