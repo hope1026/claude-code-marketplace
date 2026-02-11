@@ -5,7 +5,7 @@ description: Multi-AI collaboration using Codex CLI and Gemini CLI. Use when use
 
 # AI Council
 
-Orchestrate discussions between multiple AI systems (Claude, Codex, Gemini) to reach well-reasoned consensus on complex problems.
+Orchestrate discussions between multiple AI systems (Claude, Codex, Gemini) to reach a well-reasoned consensus on complex problems.
 
 ## Prerequisites
 
@@ -22,11 +22,13 @@ gemini --version
 |----|------------------|-----------------|-----------|
 | **Claude** | claude-opus-4-5 | claude-sonnet-4 | Nuanced reasoning, safety, detailed explanations |
 | **Codex** (OpenAI) | gpt-5.2-codex | gpt-5-codex-mini | Code generation, practical solutions, long-horizon tasks |
-| **Gemini** (Google) | gemini-3-pro | gemini-3-flash | Large context (1M), security review, agentic coding |
+| **Gemini** (Google) | `auto` (default), `pro` if needed | `auto` (default), `flash` if needed | Large context, security review, agentic coding |
 
-### Model Selection Guidelines
-- **Planning/Architecture/Problem-solving**: Use top-tier models for best reasoning
-- **General tasks/Quick queries**: Use faster models for efficiency
+### Gemini Model Notes
+- Prefer `auto` first (`gemini` without `-m` is effectively Auto behavior).
+- Use `pro` only when higher reasoning depth is clearly needed.
+- Use `flash` only when speed is more important than depth.
+- If a pinned model fails (quota/access), retry with `auto`.
 
 ## Workflow
 
@@ -40,9 +42,14 @@ Clearly state the decision/problem and identify relevant context files.
 codex exec "What's your recommended approach for [problem]? Focus on implementation trade-offs." --context-file <file>
 ```
 
-**Query Gemini (use gemini-3-pro for architecture decisions):**
+**Query Gemini (Auto default):**
 ```bash
-gemini -m gemini-3-pro "Analyze from architecture and security standpoints: [problem]. Context: $(cat <file>)"
+gemini "Analyze from architecture and security standpoints: [problem]. Context: $(cat <file>)"
+```
+
+Optional explicit pinning for hard cases:
+```bash
+gemini -m pro "Analyze from architecture and security standpoints: [problem]. Context: $(cat <file>)"
 ```
 
 ### 3. Synthesize
@@ -85,19 +92,19 @@ gemini -m gemini-3-pro "Analyze from architecture and security standpoints: [pro
 
 ## Examples
 
-### Architecture Decision (use top-tier models)
+### Architecture Decision (use top-tier models only when needed)
 ```bash
 # Get Codex's view (gpt-5.2-codex default for complex tasks)
 codex exec "Should we use Redux or Context API? $(cat src/App.tsx | head -50)"
 
-# Get Gemini's view
-gemini -m gemini-3-pro --include-directories ./src "Recommend Redux vs Context API with rationale"
+# Get Gemini's view (Auto first)
+gemini --include-directories ./src "Recommend Redux vs Context API with rationale"
 ```
 
-### Code Review (general models fine)
+### Code Review (general defaults)
 ```bash
 codex exec --model gpt-5-codex-mini "Review for bugs and improvements" --context-file src/utils.ts
-gemini -m gemini-3-flash "Security and performance review: $(cat src/utils.ts)"
+gemini "Security and performance review: $(cat src/utils.ts)"
 ```
 
 ### Bug Investigation
@@ -106,17 +113,17 @@ codex exec "What could cause this error? $(cat error.log | tail -30)"
 gemini "Analyze potential root causes: $(cat error.log | tail -30)"
 ```
 
-### Deep Reasoning (for complex problems)
+### Deep Reasoning (pin only if necessary)
 ```bash
-# Use Gemini's deep thinking for iterative design or research
-gemini -m gemini-2.5-deep-think "Design optimal solution for [complex problem]"
+# Prefer auto first; pin to pro only when depth is required
+gemini -m pro "Design an optimal solution for [complex problem]"
 ```
 
 ## Guidelines
 
-- Summarize and synthesize, don't copy verbatim
-- Give equal weight to well-reasoned arguments
-- Acknowledge uncertainty when consensus isn't possible
-- 2-3 rounds of discussion is usually sufficient
-- Never send sensitive data (credentials, secrets) to external AIs
-- Response times may vary (30+ seconds for complex queries)
+- Summarize and synthesize, do not copy verbatim.
+- Give equal weight to well-reasoned arguments.
+- Acknowledge uncertainty when consensus is not possible.
+- 2-3 rounds of discussion are usually sufficient.
+- Never send sensitive data (credentials, secrets) to external AIs.
+- Response times may vary (30+ seconds for complex queries).
