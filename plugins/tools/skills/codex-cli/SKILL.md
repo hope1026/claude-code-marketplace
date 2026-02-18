@@ -5,7 +5,7 @@ description: Collaborate with OpenAI Codex CLI for code tasks. Use when user say
 
 # Codex CLI Collaboration
 
-Collaborate with OpenAI GPT-5.2-Codex via Codex CLI for code review, second opinions, and pair programming.
+Collaborate with OpenAI Codex via Codex CLI for code review, second opinions, and pair programming.
 
 ## Prerequisites Check
 
@@ -29,36 +29,52 @@ codex auth
 
 ### Code Review Request
 ```bash
-codex exec "Review this code for bugs, performance issues, and best practices" --context-file <file>
+FILE=<file>
+codex exec "Review this code for bugs, performance issues, and best practices.
+
+Code from $FILE:
+$(cat "$FILE")"
 ```
 
 ### Second Opinion
 ```bash
-codex exec "I'm considering <approach>. What are the pros/cons? Any better alternatives?" --context-file <file>
+FILE=<file>
+codex exec "I'm considering <approach>. What are the pros/cons? Any better alternatives?
+
+Relevant context from $FILE:
+$(cat "$FILE")"
 ```
 
 ### Pair Programming
 ```bash
-codex exec "Help me implement <feature>. Current progress:" --context-file <file>
+FILE=<file>
+codex exec "Help me implement <feature>. Current progress:
+
+Context from $FILE:
+$(cat "$FILE")"
 ```
 
 ## Basic Usage
 
 ### Query with Context
 ```bash
-codex exec "<task>" --context-file <file>
+FILE=<file>
+codex exec "<task>
+
+Reference context from $FILE:
+$(cat "$FILE")"
 ```
 
 ### Model Selection
 
 | Model | Use Case | Speed |
 |-------|----------|-------|
-| `gpt-5.2-codex` | Complex tasks, architecture, planning (default) | Slower |
+| `gpt-5.3-codex` | Complex tasks, architecture, planning (default) | Slower |
 | `gpt-5-codex` | Standard coding tasks | Medium |
 | `gpt-5-codex-mini` | Simple queries, quick fixes | Fast |
 
 **Model Selection Guidelines:**
-- **Planning/Problem-solving**: Use `gpt-5.2-codex` (best reasoning)
+- **Planning/Problem-solving**: Use `gpt-5.3-codex` (best reasoning)
 - **General tasks**: Use default or `gpt-5-codex-mini` for speed
 
 ```bash
@@ -69,13 +85,14 @@ codex exec "<complex architecture question>"
 codex exec --model gpt-5-codex-mini "<simple question>"
 ```
 
-### Approval Modes
-- `suggest`: Review only (default, recommended)
-- `auto-edit`: Auto-approve edits
-- `full-auto`: Auto-approve all (use with caution)
+### Execution Modes
+- default: safest mode, keeps approvals/sandbox in place
+- `--full-auto`: low-friction automation in sandbox (use carefully)
+- `--dangerously-bypass-approvals-and-sandbox`: no approvals or sandbox (high risk)
 
 ```bash
-codex exec --approval-mode suggest "<task>"
+codex exec "<task>"
+codex exec --full-auto "<task>"
 ```
 
 ## Response Handling
@@ -93,17 +110,25 @@ codex exec "Analyze this error and suggest fixes: $(cat error.log | tail -50)"
 
 ### Test Generation
 ```bash
-codex exec "Write unit tests for this module" --context-file src/utils.ts
+FILE=src/utils.ts
+codex exec "Write unit tests for this module.
+
+Module source:
+$(cat "$FILE")"
 ```
 
 ### Refactoring
 ```bash
-codex exec "Suggest refactoring for better readability" --context-file src/legacy.ts
+FILE=src/legacy.ts
+codex exec "Suggest refactoring for better readability.
+
+Source:
+$(cat "$FILE")"
 ```
 
 ## Notes
 
 - Requires ChatGPT Plus/Pro subscription or API key
 - 5-hour usage limit (subscription-based)
-- Always use `suggest` mode for safety
+- Keep approvals and sandbox enabled unless you explicitly need automation
 - Review all generated code before applying
