@@ -1,0 +1,11 @@
+{
+  "name": "roblox-tools",
+  "description": "Guides for Roblox MCP server development, plugin development, and documentation synchronization",
+  "version": "1.0.0",
+  "author": {
+    "name": "Han-Byeol"
+  },
+  "homepage": "https://github.com/anthropics/claude-code-marketplace",
+  "license": "MIT",
+  "keywords": ["roblox", "mcp", "typescript", "luau", "documentation", "plugin"]
+}

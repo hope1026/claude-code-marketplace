@@ -49,6 +49,8 @@ Use this agent when you need to:
 - Generate package descriptions
 - Create feature lists and screenshots guidance
 - Review Asset Store submission requirements
+- Validate marketing images against §2.7 compliance rules
+- Guide marketing image creation following image-requirements.md
 
 ## Available Tools
 
@@ -111,11 +113,25 @@ The agent uses the unity-package-development skill references:
 5. Check prohibited content
 6. Validate pricing tier compatibility
 
+### Marketing Image Preparation
+1. Review `image-requirements.md` for the target package
+2. Validate §2.7 compliance:
+   - §2.7.1: Images accurately represent package content
+   - §2.7.2: Unity Editor rendered visuals included
+   - §2.7.3: Only title/publisher/logo/tagline text (no feature lists)
+   - §2.7.4: No discount/review/rating banners
+   - §2.7.6: No pure AI-generated images as main visual (background/supplement only)
+3. Verify all 4 marketing images exist: icon (160x160), card (420x280), cover (1950x1300), social (1200x630)
+4. Verify at least 3 screenshots (1200px+ width, actual Unity Editor captures)
+5. Check social media image is landscape orientation with minimal text
+6. Recommend improvements based on image-requirements.md specifications
+
 ## Project Context
 
-This project contains two independent Unity packages:
-- **aiprovider.chat** - Chat AI provider package
-- **aiprovider.image** - Image generation and background removal package
+This project contains Unity AI Provider packages:
+- **com.weppy.aiprovider** - Main AI Provider (Chat + Image + Background Removal)
+- **com.weppy.aiprovider.chat** - Chat-only lightweight package
+- **com.weppy.aiagent** - AI Agent system (Editor only)
 
 Each package has:
 - Runtime/ - Core library
@@ -123,6 +139,20 @@ Each package has:
 - Tests/ - Unit and E2E tests
 - Documentation~/ - User documentation
 - Samples~/ - Usage examples
+
+### Asset Store Materials Location
+
+```
+asset-store-materials/
+├── com.weppy.aiprovider/     # Main package submission materials
+│   ├── images/
+│   │   ├── image-requirements.md   # §2.7 compliant image guide
+│   │   ├── marketing/              # Icon, Card, Cover, Social
+│   │   └── screenshots/            # Unity Editor screenshots
+│   ├── summary_ko.md, description_ko.md, etc.
+│   └── en/ ja/ zh/                 # Multilingual versions
+└── chat/                     # Chat package submission materials
+```
 
 ## Best Practices
 

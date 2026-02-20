@@ -21,7 +21,7 @@ gemini --version
 | AI | Model (Planning) | Model (General) | Strengths |
 |----|------------------|-----------------|-----------|
 | **Claude** | claude-opus-4-5 | claude-sonnet-4 | Nuanced reasoning, safety, detailed explanations |
-| **Codex** (OpenAI) | gpt-5.2-codex | gpt-5-codex-mini | Code generation, practical solutions, long-horizon tasks |
+| **Codex** (OpenAI) | gpt-5.3-codex | gpt-5-codex-mini | Code generation, practical solutions, long-horizon tasks |
 | **Gemini** (Google) | `auto` (default), `pro` if needed | `auto` (default), `flash` if needed | Large context, security review, agentic coding |
 
 ### Gemini Model Notes
@@ -37,9 +37,13 @@ Clearly state the decision/problem and identify relevant context files.
 
 ### 2. Gather Perspectives
 
-**Query Codex (use gpt-5.2-codex for complex decisions):**
+**Query Codex (use `gpt-5.3-codex` for complex decisions):**
 ```bash
-codex exec "What's your recommended approach for [problem]? Focus on implementation trade-offs." --context-file <file>
+FILE=<file>
+codex exec "What's your recommended approach for [problem]? Focus on implementation trade-offs.
+
+Context from $FILE:
+$(cat "$FILE")"
 ```
 
 **Query Gemini (Auto default):**
@@ -94,7 +98,7 @@ gemini -m pro "Analyze from architecture and security standpoints: [problem]. Co
 
 ### Architecture Decision (use top-tier models only when needed)
 ```bash
-# Get Codex's view (gpt-5.2-codex default for complex tasks)
+# Get Codex's view (gpt-5.3-codex default for complex tasks)
 codex exec "Should we use Redux or Context API? $(cat src/App.tsx | head -50)"
 
 # Get Gemini's view (Auto first)
@@ -103,7 +107,11 @@ gemini --include-directories ./src "Recommend Redux vs Context API with rational
 
 ### Code Review (general defaults)
 ```bash
-codex exec --model gpt-5-codex-mini "Review for bugs and improvements" --context-file src/utils.ts
+FILE=src/utils.ts
+codex exec --model gpt-5-codex-mini "Review for bugs and improvements.
+
+Module source:
+$(cat "$FILE")"
 gemini "Security and performance review: $(cat src/utils.ts)"
 ```
 

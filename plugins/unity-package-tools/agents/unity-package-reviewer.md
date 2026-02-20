@@ -86,23 +86,44 @@ README.md required sections:
 - Document Revision History
 
 ### 5. Marketing Assets Validation (Asset Store)
-Required marketing images (all three):
-1. **Icon** (square format)
-2. **Card** (wide rectangular format)
-3. **Cover** (banner format)
 
-Image requirements:
-- High quality, professional appearance
-- Minimum width: 1200px for screenshots
-- Clearly represent the package
-- No excessive text overlay
-- Consistent branding
+#### §2.7 Marketing Image Compliance
+Validate all marketing images against Unity §2.7 rules:
 
-Screenshots & Media:
-- At least 3 screenshots (1200px+ width)
+| Rule | Requirement |
+|------|-------------|
+| §2.7.1 | Images must accurately represent package content |
+| §2.7.2 | Must include visuals rendered in Unity Editor |
+| §2.7.3 | Text limited to: package title, publisher name, brand logo, short tagline. Feature description text lists FORBIDDEN |
+| §2.7.4 | Discount/review/rating banners FORBIDDEN |
+| §2.7.5 | Screenshots or media links required |
+| §2.7.6 | **Pure AI-generated images cannot be the main visual** — only allowed as background/supplementary elements |
+
+#### Required Marketing Images (all four)
+1. **Icon** (160x160px square)
+2. **Card** (420x280px wide rectangular) — most exposed thumbnail
+3. **Cover** (1950x1300px banner) — package detail page header
+4. **Social Media** (1200x630px landscape) — OG image / SNS promotion
+
+#### Image Content Validation
+- Card/Cover: Must contain actual Unity Editor screenshots as main visual
+- Card/Cover: AI-generated imagery allowed only as background texture/decoration
+- Social Media: Must be landscape orientation (not portrait)
+- Social Media: Minimal text (logo mark only recommended)
+- Icon: Must use designed logo/mark (not AI-generated illustration)
+- All images: No Unity default Skybox usage
+- All images: No embedded executables or pricing info
+
+#### Screenshots & Media
+- At least 3 screenshots (1200px+ width, recommended 1200x800 at 3:2 ratio)
+- Must be actual Unity Editor captures (not mockups or AI-generated)
 - Videos: maximum 500MB
 - Audio samples: maximum 500MB
 - Supported platforms: YouTube, Vimeo, Soundcloud, Mixcloud, Sketchfab
+
+#### Image Requirements Reference
+- Main package: `asset-store-materials/com.weppy.aiprovider/images/image-requirements.md`
+- Chat package: `asset-store-materials/chat/images/image-requirements.md`
 
 ### 6. Asset Store Guideline Compliance
 Package organization:
@@ -216,11 +237,16 @@ The agent uses the unity-package-development skill references:
 
 ### Marketing Assets Check (Asset Store only)
 1. Look for marketing images folder
-2. Verify icon, card, cover images exist
+2. Verify icon (160x160), card (420x280), cover (1950x1300), social (1200x630) exist
 3. Check image dimensions and quality
-4. Validate screenshot presence (minimum 3)
-5. Check media file sizes
-6. Verify demo scenes (for art assets)
+4. Validate §2.7.6: no pure AI-generated images as main visual
+5. Validate §2.7.3: no feature description text lists on images
+6. Validate §2.7.2: Unity Editor screenshots included
+7. Validate social media image is landscape orientation
+8. Validate screenshot presence (minimum 3, actual Unity Editor captures)
+9. Check media file sizes
+10. Verify demo scenes (for art assets)
+11. Cross-reference with image-requirements.md if available
 
 ### Code Quality Check
 1. Search for Unity namespace usage
@@ -348,6 +374,10 @@ Distribution Target: {UPM / Asset Store / Both}
 - File path length exceeds 140 characters
 - Package size exceeds 6GB (Asset Store)
 - Missing marketing images (Asset Store)
+- Pure AI-generated images used as main visual in marketing images (§2.7.6)
+- Feature description text lists on marketing images (§2.7.3)
+- Marketing images missing Unity Editor screenshots (§2.7.2)
+- Social Media image in portrait orientation instead of landscape
 - Embedded executables
 - DRM or restrictions present
 
@@ -373,15 +403,22 @@ Distribution Target: {UPM / Asset Store / Both}
 
 ### Asset Store Specific
 When validating for Asset Store:
-1. Check all 3 marketing images present
-2. Validate summary length (10-200 chars)
-3. Verify description completeness
-4. Check technical details list
-5. Validate keywords (up to 15)
-6. Verify demo scenes for art assets
-7. Check AI disclosure if applicable
-8. Validate file organization
-9. Check maximum size (6GB)
+1. Check all 4 marketing images present (icon, card, cover, social media)
+2. Validate §2.7 compliance for all marketing images:
+   - §2.7.1: Images accurately represent package content
+   - §2.7.2: Unity Editor rendered visuals included
+   - §2.7.3: Only title/publisher/logo/tagline text (no feature lists)
+   - §2.7.4: No discount/review/rating banners
+   - §2.7.5: Screenshots or media links present
+   - §2.7.6: No pure AI-generated images as main visual
+3. Validate summary length (10-200 chars)
+4. Verify description completeness
+5. Check technical details list
+6. Validate keywords (up to 15)
+7. Verify demo scenes for art assets
+8. Check AI disclosure if applicable
+9. Validate file organization
+10. Check maximum size (6GB)
 
 ### UPM Specific
 When validating for UPM:
