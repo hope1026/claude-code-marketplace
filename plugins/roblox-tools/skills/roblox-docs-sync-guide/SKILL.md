@@ -24,10 +24,10 @@ description: Guide for keeping Roblox MCP documentation in sync with code change
 - `id`: `deploy/publish/hope1026-roblox-mcp/docs/id/README.md`
 
 ## Source of Truth (Read First)
-### MCP server side (Go)
-- `mcp-server/internal/tools/*.go` — tool schemas and definitions
-- `mcp-server/internal/dispatcher/dispatcher.go` — action→plugin command mapping
-- `mcp-server/internal/tier/checker.go` — Pro/Basic tier gate
+### MCP server side (TypeScript)
+- `mcp-server/src/tools/consolidated/*.ts` — tool schemas and definitions
+- `mcp-server/src/utils/tool-dispatcher.ts` — action→plugin command mapping
+- `mcp-server/src/utils/tier-checker.ts` — Pro/Basic tier gate
 
 ### Plugin side
 - `plugin/src/CommandHandlers/init.luau` (PRO_ACTIONS is the source of truth for tier)

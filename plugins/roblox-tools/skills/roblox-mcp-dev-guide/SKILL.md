@@ -9,7 +9,7 @@ description: Guide for implementing and extending the Roblox MCP server (mcp-ser
 - User asks to add or modify MCP tools/actions in `mcp-server/`.
 - User asks about dispatcher mapping, tier wiring, or consolidated tool definitions.
 - HTTP bridge command flow or sync index behavior is involved.
-- Go server-side implementation, refactor, bugfix, or validation is requested.
+- TypeScript server-side implementation, refactor, bugfix, or validation is requested.
 
 ## Do Not Use This Skill For
 - Plugin-only Luau implementation with no server changes.
@@ -23,28 +23,28 @@ description: Guide for implementing and extending the Roblox MCP server (mcp-ser
 1. Confirm scope and expected behavior.
 - Identify target tool/action, expected result, and Basic/Pro impact.
 2. Read code before editing.
-- `mcp-server/internal/tools/*.go` — tool schemas and definitions
-- `mcp-server/internal/dispatcher/dispatcher.go` — action→plugin command mapping
-- `mcp-server/internal/tier/checker.go` — Pro/Basic tier gate
-- `mcp-server/internal/bridge/bridge.go` — HTTP bridge (gin)
-- `mcp-server/internal/sync/` — file sync (LRU + watcher)
-- `mcp-server/internal/server/mcp.go` — MCP stdio server
-- Relevant tests under `mcp-server/internal/**/*_test.go` and `mcp-server/internal/e2e/`
+- `mcp-server/src/tools/consolidated/*.ts` — tool schemas and definitions
+- `mcp-server/src/utils/tool-dispatcher.ts` — action→plugin command mapping
+- `mcp-server/src/utils/tier-checker.ts` — Pro/Basic tier gate
+- `mcp-server/src/http-bridge.ts` — HTTP bridge (Express)
+- `mcp-server/src/sync/` — file sync (LRU + watcher)
+- `mcp-server/src/server.ts` — MCP stdio server
+- Relevant tests under `mcp-server/src/**/__tests__/` and `mcp-server/src/e2e/`
 3. Implement with existing patterns.
 - Keep strict type safety and naming conventions.
 - Avoid parameter polymorphism; split into explicit actions/tools when input modes differ.
 4. Sync cross-repo contracts when tool/action changes.
 - Update plugin handlers, tier maps, and docs references.
 5. Validate.
-- Run `cd mcp-server && go build ./...`.
-- Run targeted tests: `cd mcp-server && go test ./...`.
+- Run `cd mcp-server && npm run build`.
+- Run targeted tests: `cd mcp-server && npm test`.
 6. Report.
 - Summarize changed files, behavior impact, validation, and residual risks.
 
 ## Required Cross-Repo Updates (Tool/Action Change)
-- `mcp-server/internal/tools/<tool>.go`: add action and parameter schema
-- `mcp-server/internal/dispatcher/dispatcher.go`: add `dispatchMap` entry
-- `mcp-server/internal/tier/checker.go`: add to `proActions` if Pro
+- `mcp-server/src/tools/consolidated/<tool>.ts`: add action and parameter schema
+- `mcp-server/src/utils/tool-dispatcher.ts`: add dispatch mapping entry
+- `mcp-server/src/utils/tier-checker.ts`: add to Pro action gate if Pro
 - `plugin/src/CommandHandlers/{Core,Pro}/*.luau`: implement handler
 - `plugin/src/CommandHandlers/init.luau`: register handler and `PRO_ACTIONS`
 - `deploy/publish/hope1026-roblox-mcp/plugins/weppy-roblox-mcp/skills/roblox-game-dev/references/mcp-tools.md`: sync tool reference
@@ -52,13 +52,13 @@ description: Guide for implementing and extending the Roblox MCP server (mcp-ser
 
 ## Architecture Rules
 ### Command Flow
-`AI Agent -> MCP (JSON-RPC stdio) -> HTTP Bridge (gin) -> Roblox Plugin (HTTP polling)`
+`AI Agent -> MCP (JSON-RPC stdio) -> HTTP Bridge (Express) -> Roblox Plugin (HTTP polling)`
 
 ### Key Dependencies
-- `github.com/mark3labs/mcp-go` — MCP protocol SDK
-- `github.com/gin-gonic/gin` — HTTP server
-- `github.com/fsnotify/fsnotify` — File watching
-- `github.com/hashicorp/golang-lru/v2` — LRU cache
+- `@modelcontextprotocol/sdk` — MCP protocol SDK
+- `express` — HTTP server
+- `chokidar` — File watching
+- `lru-cache` — LRU cache
 
 ### Security Defaults
 - Bind to `127.0.0.1:3002` only.
@@ -75,10 +75,10 @@ description: Guide for implementing and extending the Roblox MCP server (mcp-ser
 - `"Enum.*"` string -> Enum value
 
 ### Cross-Platform Build
-- `CGO_ENABLED=0` — no external C dependencies
-- 5 targets: `linux/amd64`, `linux/arm64`, `darwin/amd64`, `darwin/arm64`, `windows/amd64`
-- File paths: use `filepath.Join()` and `filepath.ToSlash()`
-- Build script: `mcp-server/scripts/build.sh`
+- Target Node.js 18+ (see `mcp-server/package.json` `engines` field).
+- Build with `npm run build` and production bundle with `npm run build:prod`.
+- File paths: use `path.join()` / `path.resolve()` and avoid hardcoded separators.
+- Keep scripts shell-safe across macOS/Linux and avoid OS-specific assumptions.
 
 ## Sync Module Rules (Critical)
 ### Full Sync Lifecycle
@@ -98,24 +98,24 @@ description: Guide for implementing and extending the Roblox MCP server (mcp-ser
 
 ## Constants and Enums
 - Repeated string literals used as enums or option values must be defined as named constants.
-- In Go: use `const` blocks or typed string constants (e.g., `type PopupPosition string`).
+- In TypeScript: use `const` objects with string-literal union types (or enums where appropriate).
 - Co-locate constants near usage: define them in the package/file where they are primarily used, not in a global constants file.
-  - Example: popup position constants belong in the module that handles popup logic, not in a shared `constants.go`.
-- When a constant is shared across multiple packages, place it in the lowest common ancestor package.
+  - Example: popup position constants belong in the module that handles popup logic, not in a shared `constants.ts`.
+- When a constant is shared across multiple modules, place it in the lowest common ancestor directory.
 - Never scatter the same magic string across multiple files; extract it once and reference everywhere.
 
 ## Constraints
 - Keep total MCP tools under 100; prefer adding `action` to consolidated tools.
-- Use `mcp-go` SDK and existing gin patterns.
-- Target Go 1.21+ with single native binary output.
+- Use `@modelcontextprotocol/sdk` and existing Express patterns.
+- Target Node.js 18+ with TypeScript ESM output.
 
 ## Validation Checklist
 - [ ] Server behavior implemented and type-safe
 - [ ] Dispatch and tier mappings updated
 - [ ] Plugin side updated when required
 - [ ] Docs/tool-count sync completed when required
-- [ ] `go build ./...` passed
-- [ ] `go test ./...` run or explicitly noted if skipped
+- [ ] `npm run build` passed
+- [ ] `npm test` run or explicitly noted if skipped
 
 ## Output Contract
 When using this skill, return:

@@ -12,7 +12,7 @@ description: Guide for implementing and extending the Roblox Studio plugin (plug
 - Basic/Pro gating, stub behavior, or plugin-side integration needs updates.
 
 ## Do Not Use This Skill For
-- Server-only Go work with no plugin changes.
+- Server-only TypeScript work with no plugin changes.
 - Docs-only synchronization with no code changes (use `roblox-docs-sync-guide`).
 
 ## Working Scope
@@ -46,9 +46,9 @@ description: Guide for implementing and extending the Roblox Studio plugin (plug
 ## Required Cross-Repo Updates (Handler/Action Change)
 - `plugin/src/CommandHandlers/{Core,Pro}/*.luau`: implement handler
 - `plugin/src/CommandHandlers/init.luau`: register handler and `PRO_ACTIONS`
-- `mcp-server/internal/tools/<tool>.go`: add action and parameter schema
-- `mcp-server/internal/dispatcher/dispatcher.go`: add `dispatchMap` entry
-- `mcp-server/internal/tier/checker.go`: add to `proActions` if Pro
+- `mcp-server/src/tools/consolidated/<tool>.ts`: add action and parameter schema
+- `mcp-server/src/utils/tool-dispatcher.ts`: add dispatch mapping entry
+- `mcp-server/src/utils/tier-checker.ts`: add to Pro action gate if Pro
 - `CLAUDE.md`: update tool count/category table when total changes
 
 ## API and Safety Rules
