@@ -95,6 +95,14 @@ description: Guide for implementing and extending the Roblox MCP server (mcp-ser
 - `fileHash`: last content written to disk.
 - After Studio->File writes, update both hashes together.
 
+## Constants and Enums
+- Repeated string literals used as enums or option values must be defined as named constants.
+- In Go: use `const` blocks or typed string constants (e.g., `type PopupPosition string`).
+- Co-locate constants near usage: define them in the package/file where they are primarily used, not in a global constants file.
+  - Example: popup position constants belong in the module that handles popup logic, not in a shared `constants.go`.
+- When a constant is shared across multiple packages, place it in the lowest common ancestor package.
+- Never scatter the same magic string across multiple files; extract it once and reference everywhere.
+
 ## Constraints
 - Keep total MCP tools under 100; prefer adding `action` to consolidated tools.
 - Use `mcp-go` SDK and existing gin patterns.

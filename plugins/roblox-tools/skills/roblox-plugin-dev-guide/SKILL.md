@@ -78,6 +78,28 @@ description: Guide for implementing and extending the Roblox Studio plugin (plug
 - Sequence must be: `pauseTracking -> apply changes -> update hashes -> resumeTracking`.
 - Update applied instance hashes to prevent echo loops.
 
+## Constants and Enums
+- Repeated string literals used as enums, option values, or configuration keys must be defined as named constants in a dedicated `Constants.luau` (or `Enums.luau`) module.
+- Co-locate constants near usage: place the constants file in the feature folder where they are primarily used, not in a single global constants file.
+  - Example: `plugin/src/UI/MainWidget/Tabs/MCPTab/Constants.luau` for popup positions, not `plugin/src/Constants.luau`.
+- Luau constant pattern:
+  ```lua
+  -- Constants.luau
+  local Constants = {}
+  Constants.PopupPosition = {
+      TopLeft = "TopLeft",
+      TopRight = "TopRight",
+      BottomLeft = "BottomLeft",
+      BottomRight = "BottomRight",
+  }
+  Constants.PopupPosition.ALL = {"TopLeft", "TopRight", "BottomLeft", "BottomRight"}
+  Constants.PopupPosition.DEFAULT = Constants.PopupPosition.TopRight
+  return Constants
+  ```
+- When a constant is shared across multiple feature folders, place it in the lowest common ancestor directory.
+- Never scatter the same magic string across multiple files; extract it once and reference everywhere.
+- Use `table.freeze()` on constant tables to prevent accidental mutation.
+
 ## Constraints
 - Keep total MCP tools under 100; prefer action expansion over top-level tool growth.
 - Use `HttpService:RequestAsync` for polling requests.
