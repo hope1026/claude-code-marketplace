@@ -47,7 +47,6 @@ description: Guide for implementing and extending the Roblox MCP server (mcp-ser
 - `mcp-server-go/internal/tier/checker.go`: add to `proActions` if Pro
 - `plugin/src/CommandHandlers/{Core,Pro}/*.luau`: implement handler
 - `plugin/src/CommandHandlers/init.luau`: register handler and `PRO_ACTIONS`
-- `deploy/publish/hope1026-roblox-mcp/plugins/weppy-roblox-mcp/skills/roblox-game-dev/references/mcp-tools.md`: sync tool reference
 - `CLAUDE.md`: update tool count/category table when total changes
 
 ## Architecture Rules

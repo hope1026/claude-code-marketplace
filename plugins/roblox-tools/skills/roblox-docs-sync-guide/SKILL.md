@@ -6,7 +6,7 @@ description: Guide for keeping Roblox MCP documentation in sync with code change
 # Roblox Docs Sync Guide
 
 ## Use This Skill When
-- Tool/action definitions changed in `mcp-server-go/`.
+- Tool/action definitions changed in `mcp-server/`.
 - Basic/Pro classification changed in plugin handler or tier files.
 - Tool counts/categories changed and docs may be stale.
 - Release documentation must stay aligned across supported languages.
@@ -16,18 +16,18 @@ description: Guide for keeping Roblox MCP documentation in sync with code change
 - Isolated copy edits unrelated to tool/action/tier truth.
 
 ## Supported Languages
-- `en`: `README.md` (root)
-- `ko`: `docs/ko/README.md`
-- `ja`: `docs/ja/README.md`
-- `es`: `docs/es/README.md`
-- `pt-br`: `docs/pt-br/README.md`
-- `id`: `docs/id/README.md`
+- `en`: `deploy/publish/hope1026-roblox-mcp/README.md`
+- `ko`: `deploy/publish/hope1026-roblox-mcp/docs/ko/README.md`
+- `ja`: `deploy/publish/hope1026-roblox-mcp/docs/ja/README.md`
+- `es`: `deploy/publish/hope1026-roblox-mcp/docs/es/README.md`
+- `pt-br`: `deploy/publish/hope1026-roblox-mcp/docs/pt-br/README.md`
+- `id`: `deploy/publish/hope1026-roblox-mcp/docs/id/README.md`
 
 ## Source of Truth (Read First)
 ### MCP server side (Go)
-- `mcp-server-go/internal/tools/*.go` — tool schemas and definitions
-- `mcp-server-go/internal/dispatcher/dispatcher.go` — action→plugin command mapping
-- `mcp-server-go/internal/tier/checker.go` — Pro/Basic tier gate
+- `mcp-server/internal/tools/*.go` — tool schemas and definitions
+- `mcp-server/internal/dispatcher/dispatcher.go` — action→plugin command mapping
+- `mcp-server/internal/tier/checker.go` — Pro/Basic tier gate
 
 ### Plugin side
 - `plugin/src/CommandHandlers/init.luau` (PRO_ACTIONS is the source of truth for tier)
@@ -131,6 +131,6 @@ When using this skill, return:
 
 ## Important Constraints
 - Keep total MCP tools under 100 and ensure docs do not imply otherwise.
-- Do not write tool count numbers (72, 140, etc.) in any user-facing text.
+- Do not write tool count numbers (72, 140, 132, etc.) in any user-facing text or manifests. This includes README, marketplace.json, plugin.json, CHANGELOG, and Gumroad descriptions. Tool/action counts change frequently during development and stale numbers mislead users.
 - Preserve existing language quality; do not rewrite unrelated translated text.
 - If a translation cannot be confidently updated, keep structure intact and call out the gap explicitly.

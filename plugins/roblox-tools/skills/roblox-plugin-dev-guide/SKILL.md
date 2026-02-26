@@ -17,7 +17,7 @@ description: Guide for implementing and extending the Roblox Studio plugin (plug
 
 ## Working Scope
 - Primary: `plugin/`
-- Required cross-check when handler contracts change: `mcp-server-go/`, `deploy/`, `CLAUDE.md`
+- Required cross-check when handler contracts change: `mcp-server/`, `deploy/`, `CLAUDE.md`
 
 ## Execution Workflow
 1. Confirm scope and affected command contract.
@@ -39,16 +39,16 @@ description: Guide for implementing and extending the Roblox Studio plugin (plug
 - Update MCP dispatcher/tier mapping and docs references.
 5. Validate.
 - Run `cd plugin && rojo serve` for integration checks.
-- Build package when needed: `cd plugin && rojo build -o build/WeppyRobloxMCP-Pro.rbxm`.
+- Build package when needed: `cd plugin && rojo build -o build/WeppyRobloxMCP.rbxm`.
 6. Report.
 - Summarize changed files, behavior impact, validation, and residual risks.
 
 ## Required Cross-Repo Updates (Handler/Action Change)
 - `plugin/src/CommandHandlers/{Core,Pro}/*.luau`: implement handler
 - `plugin/src/CommandHandlers/init.luau`: register handler and `PRO_ACTIONS`
-- `mcp-server-go/internal/tools/<tool>.go`: add action and parameter schema
-- `mcp-server-go/internal/dispatcher/dispatcher.go`: add `dispatchMap` entry
-- `mcp-server-go/internal/tier/checker.go`: add to `proActions` if Pro
+- `mcp-server/internal/tools/<tool>.go`: add action and parameter schema
+- `mcp-server/internal/dispatcher/dispatcher.go`: add `dispatchMap` entry
+- `mcp-server/internal/tier/checker.go`: add to `proActions` if Pro
 - `CLAUDE.md`: update tool count/category table when total changes
 
 ## API and Safety Rules
