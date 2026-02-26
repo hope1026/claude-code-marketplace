@@ -50,15 +50,26 @@ Track task status in a single file: `.task-cache/tasks/{plan-id}-tasks.md`
 **Last Updated:** {timestamp}
 **Progress:** {completed}/{total} ({percentage}%)
 
+## Visual Checklist
+
+### Phase Completion
+- [ ] Phase 1: {name} ({completed}/{phase-total})
+- [ ] Phase 2: {name} ({completed}/{phase-total})
+
+### Remaining Tasks
+- [ ] `TASK-00X` pending - test: {one-line verification focus}
+- [ ] `TASK-00Y` blocked - test: {one-line verification focus}
+
 ## Phase 1: {name}
 
 ### TASK-001: {title}
-- **Status:** pending | in-progress | completed | blocked | skipped
 - **Executor:** main | {agent-name}
+- **Complexity:** simple | medium | complex
+- **Dependencies:** none | TASK-XXX
 - **Started:** {timestamp}
 - **Completed:** {timestamp}
 - **Result:** {brief summary}
-- **Dependencies:** none | TASK-XXX
+- **Test:** {short verification description}
 - **Acceptance Criteria:**
   - [ ] Criterion 1
   - [ ] Criterion 2
@@ -67,6 +78,12 @@ Track task status in a single file: `.task-cache/tasks/{plan-id}-tasks.md`
 ...
 ```
 
+**Task file guardrails:**
+- Do not add `| Status | Count |` table to task files.
+- Do not add `## Phase Snapshot` when `### Phase Completion` already exists.
+- Do not add per-task `- **Status:**` fields in task detail sections.
+- Do not render a separate status-count breakdown in `status` output; use `### Visual Snapshot` only.
+
 ### 2. Update Task Status
 
 ```
@@ -74,10 +91,14 @@ Track task status in a single file: `.task-cache/tasks/{plan-id}-tasks.md`
 ```
 
 1. Read `.task-cache/tasks/{plan-id}-tasks.md`
-2. Update the task's status field
-3. Add timestamp (Started/Completed)
-4. Recalculate progress percentage
-5. Log to `.task-cache/logs/{plan-id}.log`
+2. Update the task entry in `### Remaining Tasks` with status + one-line test summary.
+3. Sync Acceptance Criteria checkboxes with status transitions:
+   - `completed` -> mark all criteria `[x]` and remove task from Remaining Tasks
+   - `pending|in-progress|blocked` -> ensure task exists in Remaining Tasks and unmet criteria stay `[ ]`
+4. Add/update timestamps (`Started`, `Completed`) and `Result` as evidence is collected.
+5. Recalculate progress percentage from completed tasks.
+6. Refresh `Visual Checklist` (`Phase Completion` + `Remaining Tasks`).
+7. Log to `.task-cache/logs/{plan-id}.log`.
 
 ### 3. Progress Report
 
@@ -92,13 +113,13 @@ Track task status in a single file: `.task-cache/tasks/{plan-id}-tasks.md`
 **Plan:** {title}
 **Progress:** {completed}/{total} ({percentage}%)
 
-### By Status
-| Status | Count |
-|--------|-------|
-| Completed | X |
-| In Progress | Y |
-| Pending | Z |
-| Blocked | W |
+### Visual Snapshot
+- Phase Completion:
+  - [ ] Phase 1: {name} ({completed}/{phase-total})
+  - [ ] Phase 2: {name} ({completed}/{phase-total})
+- Remaining Tasks:
+  - [ ] `TASK-00X` pending - test: {one-line verification focus}
+  - [ ] `TASK-00Y` blocked - test: {one-line verification focus}
 
 ### Recently Completed
 - TASK-001: {title} - {timestamp}
@@ -376,6 +397,9 @@ In new session:
 - Update immediately after task completion
 - Include brief result summary
 - Don't batch updates
+- Keep `Visual Checklist` updated so completion/remaining work is visible at a glance
+- Root-cause fix: do not mark a task completed while Acceptance Criteria remains unchecked
+- Always sync Acceptance checkboxes when status changes to avoid stale completed tasks
 
 ### Session Handoffs
 - Generate before context fills up

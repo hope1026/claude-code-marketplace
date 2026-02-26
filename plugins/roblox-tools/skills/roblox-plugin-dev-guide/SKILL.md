@@ -12,12 +12,12 @@ description: Guide for implementing and extending the Roblox Studio plugin (plug
 - Basic/Pro gating, stub behavior, or plugin-side integration needs updates.
 
 ## Do Not Use This Skill For
-- Server-only TypeScript work with no plugin changes.
+- Server-only Go work with no plugin changes.
 - Docs-only synchronization with no code changes (use `roblox-docs-sync-guide`).
 
 ## Working Scope
 - Primary: `plugin/`
-- Required cross-check when handler contracts change: `mcp-server/`, `deploy/`, `CLAUDE.md`
+- Required cross-check when handler contracts change: `mcp-server-go/`, `deploy/`, `CLAUDE.md`
 
 ## Execution Workflow
 1. Confirm scope and affected command contract.
@@ -28,7 +28,6 @@ description: Guide for implementing and extending the Roblox Studio plugin (plug
 - `plugin/src/Utils/TypeConverter.luau`
 - `plugin/src/Utils/PathResolver.luau`
 - `plugin/src/PollingClient.luau`
-- `plugin/src/ToolTiers.luau`
 - `plugin/src/Localization/`
 3. Implement with existing Luau patterns.
 - Keep deterministic handler output shape.
@@ -37,7 +36,7 @@ description: Guide for implementing and extending the Roblox Studio plugin (plug
 - Ensure all user-visible UI text is localized through `plugin/src/Localization/` keys.
 - For disabled interactive UI (button/toggle/menu), handle input attempts by showing the user what action is required; if no action is available, explain why it is disabled.
 4. Sync cross-repo contracts when handler/action changes.
-- Update MCP dispatcher/quota mapping and docs references.
+- Update MCP dispatcher/tier mapping and docs references.
 5. Validate.
 - Run `cd plugin && rojo serve` for integration checks.
 - Build package when needed: `cd plugin && rojo build -o build/WeppyRobloxMCP-Pro.rbxm`.
@@ -47,12 +46,9 @@ description: Guide for implementing and extending the Roblox Studio plugin (plug
 ## Required Cross-Repo Updates (Handler/Action Change)
 - `plugin/src/CommandHandlers/{Core,Pro}/*.luau`: implement handler
 - `plugin/src/CommandHandlers/init.luau`: register handler and `PRO_ACTIONS`
-- `plugin/src/ToolTiers.luau`: assign Basic/Pro tier
-- `plugin/src/CommandHandlers/Pro/StubsForBasic/*.luau`: add/update Basic stubs for Pro actions
-- `plugin/src/CommandHandlers/Pro/StubsForBasic/ProStubHandlers.luau`: update alternatives map
-- `mcp-server/src/utils/tool-dispatcher.ts`: add dispatch mapping
-- `mcp-server/src/utils/quota-checker.ts`: add Pro action to `PRO_TOOLS` when needed
-- `deploy/hope1026-roblox-mcp/plugins/weppy-roblox-mcp/skills/roblox-game-dev/references/mcp-tools.md`: sync tool reference
+- `mcp-server-go/internal/tools/<tool>.go`: add action and parameter schema
+- `mcp-server-go/internal/dispatcher/dispatcher.go`: add `dispatchMap` entry
+- `mcp-server-go/internal/tier/checker.go`: add to `proActions` if Pro
 - `CLAUDE.md`: update tool count/category table when total changes
 
 ## API and Safety Rules
@@ -91,8 +87,7 @@ description: Guide for implementing and extending the Roblox Studio plugin (plug
 ## Validation Checklist
 - [ ] Handler implemented with consistent success/error shape
 - [ ] Handler registry and `PRO_ACTIONS` updated
-- [ ] Tier map and Basic stub behavior updated when needed
-- [ ] MCP dispatcher/quota mappings updated when needed
+- [ ] MCP dispatcher/tier mappings updated when needed
 - [ ] Docs/tool-count sync completed when required
 - [ ] User-visible UI text is fully localized via `plugin/src/Localization/`
 - [ ] Disabled interaction input returns guidance or explicit disabled reason

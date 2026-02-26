@@ -30,7 +30,7 @@ codex auth
 ### Code Review Request
 ```bash
 FILE=<file>
-codex exec "Review this code for bugs, performance issues, and best practices.
+codex exec --model gpt-5.3-codex "Review this code for bugs, performance issues, and best practices.
 
 Code from $FILE:
 $(cat "$FILE")"
@@ -39,7 +39,7 @@ $(cat "$FILE")"
 ### Second Opinion
 ```bash
 FILE=<file>
-codex exec "I'm considering <approach>. What are the pros/cons? Any better alternatives?
+codex exec --model gpt-5.3-codex "I'm considering <approach>. What are the pros/cons? Any better alternatives?
 
 Relevant context from $FILE:
 $(cat "$FILE")"
@@ -48,7 +48,7 @@ $(cat "$FILE")"
 ### Pair Programming
 ```bash
 FILE=<file>
-codex exec "Help me implement <feature>. Current progress:
+codex exec --model gpt-5.3-codex "Help me implement <feature>. Current progress:
 
 Context from $FILE:
 $(cat "$FILE")"
@@ -59,7 +59,7 @@ $(cat "$FILE")"
 ### Query with Context
 ```bash
 FILE=<file>
-codex exec "<task>
+codex exec --model gpt-5.3-codex "<task>
 
 Reference context from $FILE:
 $(cat "$FILE")"
@@ -74,12 +74,12 @@ $(cat "$FILE")"
 | `gpt-5-codex-mini` | Simple queries, quick fixes | Fast |
 
 **Model Selection Guidelines:**
-- **Planning/Problem-solving**: Use `gpt-5.3-codex` (best reasoning)
-- **General tasks**: Use default or `gpt-5-codex-mini` for speed
+- **Default**: Always use `gpt-5.3-codex` (best reasoning)
+- **Quick/simple queries**: Use `gpt-5-codex-mini` for speed
 
 ```bash
-# Complex analysis (default model)
-codex exec "<complex architecture question>"
+# Default — always use gpt-5.3-codex
+codex exec --model gpt-5.3-codex "<task>"
 
 # Quick simple query
 codex exec --model gpt-5-codex-mini "<simple question>"
@@ -91,8 +91,8 @@ codex exec --model gpt-5-codex-mini "<simple question>"
 - `--dangerously-bypass-approvals-and-sandbox`: no approvals or sandbox (high risk)
 
 ```bash
-codex exec "<task>"
-codex exec --full-auto "<task>"
+codex exec --model gpt-5.3-codex "<task>"
+codex exec --model gpt-5.3-codex --full-auto "<task>"
 ```
 
 ## Response Handling
@@ -105,13 +105,13 @@ codex exec --full-auto "<task>"
 
 ### Bug Analysis
 ```bash
-codex exec "Analyze this error and suggest fixes: $(cat error.log | tail -50)"
+codex exec --model gpt-5.3-codex "Analyze this error and suggest fixes: $(cat error.log | tail -50)"
 ```
 
 ### Test Generation
 ```bash
 FILE=src/utils.ts
-codex exec "Write unit tests for this module.
+codex exec --model gpt-5.3-codex "Write unit tests for this module.
 
 Module source:
 $(cat "$FILE")"
@@ -120,7 +120,7 @@ $(cat "$FILE")"
 ### Refactoring
 ```bash
 FILE=src/legacy.ts
-codex exec "Suggest refactoring for better readability.
+codex exec --model gpt-5.3-codex "Suggest refactoring for better readability.
 
 Source:
 $(cat "$FILE")"

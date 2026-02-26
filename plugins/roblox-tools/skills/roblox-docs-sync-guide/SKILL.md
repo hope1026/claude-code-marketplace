@@ -6,7 +6,7 @@ description: Guide for keeping Roblox MCP documentation in sync with code change
 # Roblox Docs Sync Guide
 
 ## Use This Skill When
-- Tool/action definitions changed in `mcp-server/`.
+- Tool/action definitions changed in `mcp-server-go/`.
 - Basic/Pro classification changed in plugin handler or tier files.
 - Tool counts/categories changed and docs may be stale.
 - Release documentation must stay aligned across supported languages.
@@ -24,16 +24,40 @@ description: Guide for keeping Roblox MCP documentation in sync with code change
 - `id`: `docs/id/README.md`
 
 ## Source of Truth (Read First)
-### MCP server side
-- `mcp-server/src/tools/consolidated/*.ts`
-- `mcp-server/src/utils/tool-dispatcher.ts`
-- `mcp-server/src/utils/quota-checker.ts`
+### MCP server side (Go)
+- `mcp-server-go/internal/tools/*.go` — tool schemas and definitions
+- `mcp-server-go/internal/dispatcher/dispatcher.go` — action→plugin command mapping
+- `mcp-server-go/internal/tier/checker.go` — Pro/Basic tier gate
 
 ### Plugin side
-- `plugin/src/CommandHandlers/init.luau`
-- `plugin/src/ToolTiers.luau`
+- `plugin/src/CommandHandlers/init.luau` (PRO_ACTIONS is the source of truth for tier)
 
 ## Documentation Targets
+
+### Main README (all languages)
+- `deploy/publish/hope1026-roblox-mcp/README.md`
+- `deploy/publish/hope1026-roblox-mcp/docs/ko/README.md`
+- `deploy/publish/hope1026-roblox-mcp/docs/ja/README.md`
+- `deploy/publish/hope1026-roblox-mcp/docs/es/README.md`
+- `deploy/publish/hope1026-roblox-mcp/docs/pt-br/README.md`
+- `deploy/publish/hope1026-roblox-mcp/docs/id/README.md`
+
+### Installation guide (all languages)
+- `deploy/publish/hope1026-roblox-mcp/docs/en/installation/README.md`
+- `deploy/publish/hope1026-roblox-mcp/docs/ko/installation/README.md`
+- `deploy/publish/hope1026-roblox-mcp/docs/ja/installation/README.md`
+- `deploy/publish/hope1026-roblox-mcp/docs/es/installation/README.md`
+- `deploy/publish/hope1026-roblox-mcp/docs/pt-br/installation/README.md`
+- `deploy/publish/hope1026-roblox-mcp/docs/id/installation/README.md`
+
+### Pro upgrade guide (all languages)
+- `deploy/publish/hope1026-roblox-mcp/docs/en/pro-upgrade.md`
+- `deploy/publish/hope1026-roblox-mcp/docs/ko/pro-upgrade.md`
+- `deploy/publish/hope1026-roblox-mcp/docs/ja/pro-upgrade.md`
+- `deploy/publish/hope1026-roblox-mcp/docs/es/pro-upgrade.md`
+- `deploy/publish/hope1026-roblox-mcp/docs/pt-br/pro-upgrade.md`
+- `deploy/publish/hope1026-roblox-mcp/docs/id/pro-upgrade.md`
+
 ### Tool overview (all languages)
 - `deploy/publish/hope1026-roblox-mcp/docs/en/tools/overview.md`
 - `deploy/publish/hope1026-roblox-mcp/docs/ko/tools/overview.md`
@@ -42,14 +66,28 @@ description: Guide for keeping Roblox MCP documentation in sync with code change
 - `deploy/publish/hope1026-roblox-mcp/docs/pt-br/tools/overview.md`
 - `deploy/publish/hope1026-roblox-mcp/docs/id/tools/overview.md`
 
-### Skill tool reference
-- `deploy/publish/hope1026-roblox-mcp/plugins/weppy-roblox-mcp/skills/roblox-game-dev/references/mcp-tools.md`
+### Setup guide (all languages)
+- `deploy/publish/roblox-plugin-package/weppy-roblox-mcp/SETUP-GUIDE-en.md`
+- `deploy/publish/roblox-plugin-package/weppy-roblox-mcp/SETUP-GUIDE-ko.md`
+- `deploy/publish/roblox-plugin-package/weppy-roblox-mcp/SETUP-GUIDE-ja.md`
+- `deploy/publish/roblox-plugin-package/weppy-roblox-mcp/SETUP-GUIDE-es.md`
+- `deploy/publish/roblox-plugin-package/weppy-roblox-mcp/SETUP-GUIDE-pt-br.md`
+- `deploy/publish/roblox-plugin-package/weppy-roblox-mcp/SETUP-GUIDE-id.md`
 
-### Upgrade guide (when counts/tier value changes)
-- `deploy/publish/hope1026-roblox-mcp/docs/*/pro-upgrade.md`
+### Plugin localization (all languages)
+- `plugin/src/Localization/en.luau`
+- `plugin/src/Localization/ko.luau`
+- `plugin/src/Localization/ja.luau`
+- `plugin/src/Localization/es.luau`
+- `plugin/src/Localization/pt-br.luau`
+- `plugin/src/Localization/id.luau`
+
+### Gumroad product entry
+- `deploy/docs/gumroad/GUMROAD-PRODUCT-ENTRY-GUIDE.md`
 
 ### Global project docs (when tool totals/categories change)
 - `CLAUDE.md`
+- `deploy/publish/hope1026-roblox-mcp/CHANGELOG.md`
 
 ## Execution Workflow
 1. Read source-of-truth files.
@@ -81,6 +119,8 @@ All README language selectors must stay consistent.
 - [ ] Basic/Pro classification matches source files
 - [ ] Tool counts/categories synchronized (including `CLAUDE.md` when needed)
 - [ ] Language selector format preserved
+- [ ] Localization keys updated for all 6 languages
+- [ ] Gumroad product entry description updated if Pro features changed
 
 ## Output Contract
 When using this skill, return:
@@ -91,5 +131,6 @@ When using this skill, return:
 
 ## Important Constraints
 - Keep total MCP tools under 100 and ensure docs do not imply otherwise.
+- Do not write tool count numbers (72, 140, etc.) in any user-facing text.
 - Preserve existing language quality; do not rewrite unrelated translated text.
 - If a translation cannot be confidently updated, keep structure intact and call out the gap explicitly.

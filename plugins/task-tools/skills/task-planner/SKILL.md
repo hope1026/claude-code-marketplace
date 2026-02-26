@@ -121,14 +121,24 @@ After plan is confirmed:
 **Last Updated:** {timestamp}
 **Progress:** 0/{total} (0%)
 
+## Visual Checklist
+
+### Phase Completion
+- [ ] Phase 1: {name} (0/{phase-total})
+- [ ] Phase 2: {name} (0/{phase-total})
+
+### Remaining Tasks
+- [ ] `TASK-001` pending - test: {one-line verification focus}
+- [ ] `TASK-002` blocked - test: {one-line verification focus}
+
 ## Phase 1: {name}
 
 ### TASK-001: {title}
-- **Status:** pending
 - **Executor:** main | {subagent-name}
 - **Complexity:** simple | medium | complex
 - **Dependencies:** none | TASK-XXX
 - **Description:** {detailed description}
+- **Test:** {short verification description shown next to task in Remaining Tasks}
 - **Acceptance Criteria:**
   - [ ] Criterion 1
   - [ ] Criterion 2
@@ -136,6 +146,13 @@ After plan is confirmed:
 ### TASK-002: {title}
 ...
 ```
+
+**Task file guardrails:**
+- Do not add `| Status | Count |` table to task files.
+- Do not add `## Phase Snapshot` when `### Phase Completion` already exists.
+- Do not add per-task `- **Status:**` fields in task detail sections.
+- When a task is completed, mark all Acceptance Criteria checkboxes as `[x]`.
+- If evidence is incomplete, keep the task pending/blocked and leave unmet criteria unchecked.
 
 ### Phase 5: Discover Available Agents
 
@@ -227,6 +244,7 @@ echo "{plan-id}" > .task-cache/current-plan.txt
 - Parallelize independent tasks when possible
 - Check in with user at phase boundaries
 - Handle blocked tasks immediately
+- Keep `Visual Checklist` in sync whenever task status changes
 
 ## Examples
 
