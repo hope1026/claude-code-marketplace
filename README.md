@@ -171,8 +171,7 @@ Task planning and tracking tools for project management. Includes requirement cl
 
 | Skill | Description | Usage |
 |-------|-------------|-------|
-| `task-planner` | Plan and structure tasks from user requests. Clarifies requirements, breaks down work into actionable items, discovers available agents, and coordinates execution. | `/task-tools:task-planner` |
-| `task-tracker` | Track and update task progress. Monitors task completion, updates status with hooks support, and generates progress reports. | `/task-tools:task-tracker` |
+| `task-guide` | Unified task planning and tracking workflow. Clarifies requirements, builds phased plans, tracks progress, and manages handoff/resume in one skill. | `/task-tools:task-guide` |
 
 #### Agents
 
@@ -195,7 +194,7 @@ All data stored in `.task-cache/`:
 
 #### Session Handoff
 
-When context is running low, use `/task-tools:task-tracker handoff` to generate a summary for the next session. Resume with `/task-tools:task-tracker resume`.
+When context is running low, use `/task-tools:task-guide handoff` to generate a summary for the next session. Resume with `/task-tools:task-guide resume`.
 
 **Install:**
 ```shell
@@ -256,9 +255,7 @@ claude-code-marketplace/
 │       ├── .claude-plugin/
 │       │   └── plugin.json
 │       ├── skills/
-│       │   ├── task-planner/
-│       │   │   └── SKILL.md
-│       │   └── task-tracker/
+│       │   └── task-guide/
 │       │       └── SKILL.md
 │       └── agents/
 │           └── task-manager.md

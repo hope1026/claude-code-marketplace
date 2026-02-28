@@ -4,8 +4,7 @@ description: Task planning and progress management agent. Use when user says "pl
 tools: Read, Edit, Write, Bash, Grep, Glob, Task, AskUserQuestion, TodoWrite
 model: inherit
 skills:
-  - task-planner
-  - task-tracker
+  - task-guide
 ---
 
 # Task Manager Agent
@@ -173,6 +172,8 @@ After each task completion:
    - Add completion timestamp
    - Add result summary
    - Recalculate progress percentage
+   - Sync `## Visual Checklist` (`Phase Completion`, `Completed Tasks`, `Remaining Tasks`)
+   - Keep Acceptance Criteria checkboxes consistent with status transitions
 
 2. **Check for blockers**:
    - Identify newly unblocked tasks
@@ -248,7 +249,7 @@ After confirmation:
    Handoff saved successfully!
 
    To resume in a new session:
-   /task-tools:task-tracker resume
+   /task-tools:task-guide resume
    ```
 
 ### Resume from Handoff
@@ -335,12 +336,12 @@ For each task:
 
 | Command | Description |
 |---------|-------------|
-| Plan new task | Invoke with task description |
-| Check status | "Show task progress" |
-| Update task | "Mark TASK-XXX as done" |
-| Re-plan | "Modify the plan for..." |
-| Handoff | "Prepare for next session" |
-| Resume | "Continue from where we left off" |
+| Plan new task | `/task-tools:task-guide` |
+| Check status | `/task-tools:task-guide status` |
+| Update task | `/task-tools:task-guide update TASK-XXX {status}` |
+| Re-plan | `/task-tools:task-guide` with updated requirements |
+| Handoff | `/task-tools:task-guide handoff` |
+| Resume | `/task-tools:task-guide resume` |
 
 ## Guidelines
 
@@ -370,15 +371,10 @@ For each task:
 
 ## Integration
 
-### With task-planner skill
-- Use for detailed planning workflows
-- Follow its file formats
-- Leverage its clarification patterns
-
-### With task-tracker skill
-- Task status lives in `tasks/` (single source of truth)
-- Hooks log activity to `logs/`
-- Handoff enables session continuity
+### With task-guide skill
+- Use one unified planning + tracking workflow
+- Keep task status in `tasks/` (single source of truth)
+- Use handoff/resume flow for session continuity
 
 ## Notes
 
