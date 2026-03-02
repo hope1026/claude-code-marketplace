@@ -17,8 +17,6 @@ Plan tasks, execute with clear status transitions, and create handoffs from a si
 │   └── {plan-id}-tasks.md
 ├── logs/                     # Activity logs
 │   └── {plan-id}.log
-├── agents/                   # Discovered subagents
-│   └── available-agents.md
 ├── handoff/                  # Session handoff summaries
 │   └── {plan-id}-handoff.md
 └── current-plan.txt          # Active plan ID
@@ -40,7 +38,6 @@ Plan tasks, execute with clear status transitions, and create handoffs from a si
    - clear actions
    - dependencies
    - complexity (`simple|medium|complex`)
-   - executor (`main|subagent`)
 3. Identify risks and mitigations.
 4. Write `.task-cache/plans/{plan-id}.md`.
 
@@ -61,9 +58,9 @@ Plan tasks, execute with clear status transitions, and create handoffs from a si
 
 ## Phases
 ### Phase 1: {name}
-- [ ] Task 1.1 - {description} [complexity: simple] [executor: main]
+- [ ] Task 1.1 - {description} [complexity: simple]
 ### Phase 2: {name}
-- [ ] Task 2.1 - {description} [complexity: complex] [executor: subagent]
+- [ ] Task 2.1 - {description} [complexity: complex]
   - Depends on: Task 1.1
 
 ## Risks & Mitigations
@@ -109,7 +106,6 @@ Never execute without explicit user confirmation.
 ## Phase 1: {name}
 
 ### TASK-001: {title}
-- **Executor:** main | {agent-name}
 - **Complexity:** simple | medium | complex
 - **Dependencies:** none | TASK-XXX
 - **Started:** {timestamp}
@@ -121,24 +117,14 @@ Never execute without explicit user confirmation.
   - [ ] Criterion 2
 ```
 
-### Phase 5: Discover Available Agents
-
-1. Scan for agent specs:
-   ```bash
-   find . -name "*.md" -path "*agents*" -type f 2>/dev/null
-   find .claude/agents -name "*.md" 2>/dev/null
-   ```
-2. Save summary to `.task-cache/agents/available-agents.md`.
-3. Match tasks to best-fit agents.
-
-### Phase 6: Execution Coordination
+### Phase 5: Execution Coordination
 
 1. Respect dependencies.
 2. Execute `simple` tasks directly.
-3. Delegate `complex` tasks to matched subagents.
+3. Execute `complex` tasks with extra care (smaller steps, checkpoints).
 4. Update task file immediately after each status change.
 
-### Phase 7: Status Updates
+### Phase 6: Status Updates
 
 Use:
 ```text
@@ -155,7 +141,7 @@ Use:
 6. Refresh `Visual Checklist` (`Phase Completion` + `Completed Tasks` + `Remaining Tasks`).
 7. Append activity log entry.
 
-### Phase 8: Progress Report
+### Phase 7: Progress Report
 
 Use:
 ```text
@@ -189,7 +175,7 @@ Use:
 - TASK-005: Blocked by {reason}
 ```
 
-### Phase 9: Session Handoff and Resume
+### Phase 8: Session Handoff and Resume
 
 Generate:
 ```text
@@ -221,7 +207,7 @@ Handoff workflow:
 
 Initialize cache:
 ```bash
-mkdir -p .task-cache/plans .task-cache/tasks .task-cache/logs .task-cache/agents .task-cache/handoff
+mkdir -p .task-cache/plans .task-cache/tasks .task-cache/logs .task-cache/handoff
 ```
 
 Plan ID format:
