@@ -1,0 +1,135 @@
+name: Publish Ralph
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      action:
+        description: Action to perform
+        required: true
+        type: choice
+        default: build_and_publish
+        options:
+          - build_only
+          - build_and_publish
+      version:
+        description: Version override (optional, example 0.1.0 or v0.1.0)
+        required: false
+        type: string
+
+env:
+  NODE_VERSION: "20"
+  PACKAGE_DIR: ralph-package
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  prepare:
+    name: Prepare
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      version_num: ${{ steps.version.outputs.version_num }}
+      should_publish: ${{ steps.mode.outputs.should_publish }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            RAW_VERSION="${{ github.event.release.tag_name }}"
+          elif [ -n "${{ github.event.inputs.version }}" ]; then
+            RAW_VERSION="${{ github.event.inputs.version }}"
+          else
+            RAW_VERSION="v$(node -p "require('./${{ env.PACKAGE_DIR }}/package.json').version")"
+          fi
+
+          VERSION="${RAW_VERSION#ralph-}"
+          if [[ ! "$VERSION" =~ ^v ]]; then
+            VERSION="v$VERSION"
+          fi
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "version_num=${VERSION#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Determine mode
+        id: mode
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            echo "should_publish=true" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event.inputs.action }}" = "build_and_publish" ]; then
+            echo "should_publish=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_publish=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  build:
+    name: Build
+    needs: prepare
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: ${{ env.PACKAGE_DIR }}/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ${{ env.PACKAGE_DIR }}
+        run: npm ci
+
+      - name: Set package version for build
+        working-directory: ${{ env.PACKAGE_DIR }}
+        run: npm version "${{ needs.prepare.outputs.version_num }}" --no-git-tag-version
+
+      - name: Type check
+        working-directory: ${{ env.PACKAGE_DIR }}
+        run: npm run check
+
+      - name: Build package
+        working-directory: ${{ env.PACKAGE_DIR }}
+        run: npm run build
+
+      - name: Pack preview
+        working-directory: ${{ env.PACKAGE_DIR }}
+        run: npm pack --dry-run
+
+  publish-npm:
+    name: Publish to npm
+    needs: [prepare, build]
+    if: needs.prepare.outputs.should_publish == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          registry-url: https://registry.npmjs.org
+          cache: npm
+          cache-dependency-path: ${{ env.PACKAGE_DIR }}/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ${{ env.PACKAGE_DIR }}
+        run: npm ci
+
+      - name: Set publish version
+        working-directory: ${{ env.PACKAGE_DIR }}
+        run: npm version "${{ needs.prepare.outputs.version_num }}" --no-git-tag-version
+
+      - name: Publish package
+        working-directory: ${{ env.PACKAGE_DIR }}
+        run: npm publish --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

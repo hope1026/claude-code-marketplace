@@ -1,4 +1,0 @@
-interface:
-  display_name: "Task Ralph"
-  short_description: "Execute a resumable task plan"
-  default_prompt: "Use $task-ralph to continue the approved plan and keep .task-cache up to date."

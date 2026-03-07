@@ -7,6 +7,8 @@ description: Plan work into phases and initialize task-cache files before implem
 
 Create the execution plan first. This skill owns planning, not implementation.
 
+Use `task-run` after the plan is approved and the task-cache files are ready.
+
 ## Cache Directory
 
 ```text
@@ -92,6 +94,8 @@ Task file format:
 **Created:** {timestamp}
 **Last Updated:** {timestamp}
 **Current Phase:** Phase 1
+**Current Task:** none
+**Next Task:** TASK-001
 **Progress:** {completed}/{total} ({percentage}%)
 **Pending User Checks:** {count}
 
@@ -104,6 +108,13 @@ Task file format:
 
 ### Remaining Tasks
 - [ ] `TASK-002` pending - test: {one-line verification}
+
+## Phase 1: {name}
+- **Phase Validation Status:** pending | failed | passed
+- **Last Validation Run:** {timestamp}
+- **Validation Evidence:** {brief summary}
+- **Retry Count:** {n}
+- **Phase Gate Rule:** Do not start the next phase until this phase is `passed`
 ```
 
 Runtime file example:
@@ -113,6 +124,8 @@ Runtime file example:
   "status": "planned",
   "plan_id": "plan-20260307-example",
   "phase": "Phase 1: Planning",
+  "current_task": "none",
+  "next_task": "TASK-001",
   "remaining": 4,
   "detail_path": ".task-cache/tasks/plan-20260307-example-tasks.md"
 }
@@ -122,4 +135,5 @@ Runtime file example:
 
 - Planning detail lives in `.task-cache/`.
 - Runtime JSON is a lightweight summary only.
+- Initialize the task file so `task-run` can update `Current Phase`, `Current Task`, `Next Task`, progress, and phase validation state without changing the document structure.
 - Keep the initial task file aligned with the approved plan.

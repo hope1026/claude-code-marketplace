@@ -5,7 +5,7 @@ description: Plan work into phases and initialize task cache files. Use when the
 
 # Task Plan
 
-Create and confirm the execution plan before any Ralph-style work loop starts.
+Create and confirm the execution plan before any implementation work starts.
 
 This skill owns planning. It does not own the execution loop.
 
@@ -20,7 +20,7 @@ Use this skill for:
 - task file initialization
 - user confirmation before execution
 
-Use `task-ralph` after planning is approved and the task files are ready.
+Use `task-run` after planning is approved and the task files are ready.
 
 ## Cache Directory
 
@@ -117,6 +117,8 @@ Task file format:
 **Created:** {timestamp}
 **Last Updated:** {timestamp}
 **Current Phase:** Phase 1
+**Current Task:** none
+**Next Task:** TASK-001
 **Progress:** {completed}/{total} ({percentage}%)
 **Pending User Checks:** {count}
 
@@ -136,6 +138,7 @@ Task file format:
 - **Last Validation Run:** {timestamp}
 - **Validation Evidence:** {brief summary}
 - **Retry Count:** {n}
+- **Phase Gate Rule:** Do not start the next phase until this phase is `passed`
 
 ### TASK-001: {title}
 - **Complexity:** simple | medium | complex
@@ -170,8 +173,8 @@ User check file format:
 
 - Do not start implementation work before the user confirms the plan
 - Keep planning detail in `.task-cache/`
-- If `.claude/loop-state.json` is present later, treat it as derived execution summary only
-- Do not store execution retry history or validation evidence in `loop-state.json`
+- Initialize the task file so `task-run` can update `Current Phase`, `Current Task`, `Next Task`, progress, and phase validation state without changing the document structure
+- Keep validation and retry history in `.task-cache/tasks/` and `.task-cache/logs/`
 - Keep the initial task file aligned with the approved plan
 - Keep `current-plan.txt` aligned with the plan that should execute next
 

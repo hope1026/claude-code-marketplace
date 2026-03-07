@@ -1,0 +1,4 @@
+interface:
+  display_name: "Task Run"
+  short_description: "Execute a resumable phase-based task plan"
+  default_prompt: "Use $task-run to continue the approved plan phase-by-phase and keep .task-cache up to date."

@@ -6,6 +6,7 @@ Monorepo for AI agent distribution assets.
 
 - `claude-code-marketplace/`: Claude Code marketplace root with `.claude-plugin/marketplace.json`
 - `codex-plugins/`: Codex skill collection rooted at `.agents/skills/`
+- `ralph-package/`: independent `@weppy/ralph` package with CLI and MCP scaffold
 
 ## Notes
 

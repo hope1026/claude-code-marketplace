@@ -1,0 +1,37 @@
+{
+  "name": "@weppy/ralph",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Independent Ralph orchestrator with CLI and MCP entrypoints.",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "bin": {
+    "ralph": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "specs"
+  ],
+  "scripts": {
+    "build": "node build.mjs",
+    "check": "tsc --noEmit",
+    "prepublishOnly": "npm run check && npm run build"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "keywords": [
+    "agent",
+    "orchestrator",
+    "cli",
+    "mcp",
+    "codex",
+    "claude"
+  ],
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.8.0"
+  }
+}
