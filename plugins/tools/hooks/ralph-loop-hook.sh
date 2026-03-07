@@ -1,18 +1,22 @@
 #!/bin/bash
 # Shared Stop hook
 # Controls exit behavior when .claude/loop-state.json exists.
+# The state file is a loop-control summary, not a detailed task ledger.
 #
 # Example state file:
 # {
 #   "status": "active" | "complete" | "inactive",
 #   "iteration": 1,
-#   "title": "Release Checklist",
-#   "skill": "deploy-flow",
+#   "title": "Task Ralph",
+#   "skill": "task-ralph",
 #   "remaining": 2,
 #   "metric_label": "Remaining tasks",
 #   "pending_items": ["Run tests", "Update docs"],
-#   "next_steps": ["Continue working", "Update the state file"],
-#   "block_reason": "There is still unfinished work."
+#   "next_steps": ["Continue working", "Update the loop summary"],
+#   "block_reason": "There is still unfinished work.",
+#   "phase": "Implementation",
+#   "plan_id": "plan-20260307-task-ralph",
+#   "detail_path": ".task-cache/tasks/plan-20260307-task-ralph-tasks.md"
 # }
 
 set -euo pipefail
@@ -60,9 +64,9 @@ append_numbered_lines() {
 
 build_default_steps() {
   cat <<'EOF'
-Review the current goal and remaining work
-Continue the required work
-Update progress in .claude/loop-state.json
+Check the current goal and remaining work
+Continue the next required step
+Update the loop summary in .claude/loop-state.json
 When finished, set status to complete or set remaining to 0
 EOF
 }
@@ -97,6 +101,9 @@ PENDING_ITEMS=$(read_state '
   else empty
   end
 ')
+PHASE=$(read_state '.phase // ""')
+PLAN_ID=$(read_state '.plan_id // ""')
+DETAIL_PATH=$(read_state '.detail_path // ""')
 
 # Clean up and allow exit if the loop is inactive or complete.
 if [ "$STATUS" = "inactive" ] || [ "$STATUS" = "complete" ]; then
@@ -134,6 +141,16 @@ fi
 cat <<EOF
 [Loop Hook - $DISPLAY_NAME - Iteration $NEXT_ITER] $BLOCK_REASON
 EOF
+
+if [ -n "$PHASE" ] || [ -n "$PLAN_ID" ] || [ -n "$DETAIL_PATH" ]; then
+  cat <<EOF
+
+Context:
+EOF
+  [ -n "$PHASE" ] && printf -- '- Phase: %s\n' "$PHASE"
+  [ -n "$PLAN_ID" ] && printf -- '- Plan ID: %s\n' "$PLAN_ID"
+  [ -n "$DETAIL_PATH" ] && printf -- '- Detail Path: %s\n' "$DETAIL_PATH"
+fi
 
 if [ -n "$PENDING_ITEMS" ]; then
   cat <<EOF
