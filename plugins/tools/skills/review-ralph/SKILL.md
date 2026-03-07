@@ -3,54 +3,91 @@ name: review-ralph
 description: Professional code and work review with multi-AI feedback. Use when user says "review", "code review", "review my work", "check my changes", "review this PR", or needs thorough quality assurance on code, documents, or completed tasks.
 ---
 
-# Multi-AI Review
+# Multi-AI Review (Stop Hook Loop)
 
-Perform thorough reviews of code, documents, and completed work using multiple AI perspectives. Iterate fixes until all reviewers confirm everything is properly applied.
+Stop hook 기반 자율 리뷰 루프. Claude가 종료를 시도하면 hook이 잔여 이슈를 확인하고, 이슈가 0개가 될 때까지 세션을 자동으로 계속한다.
 
-## Workflow
+## Architecture
 
 ```
-Phase 1: Scope Analysis
-   ↓ Identify review targets (changed files, documents, tasks)
-Phase 2: Self-Review
-   ↓ Claude performs initial detailed review
-Phase 3: Multi-AI Review
-   ↓ Gather external AI perspectives (Codex / Gemini / Claude CLI)
-Phase 4: Synthesize Findings
-   ↓ Merge all review feedback into actionable items
-   ▼
-┌──────────────────────────────────────┐
-│  Phase 5: Fix Issues                 │
-│     Apply fixes for identified issues│
-│              ↓                       │
-│  Phase 6: Re-Review                  │
-│     All reviewers re-review fixes    │
-│              ↓                       │
-│  New issues found?                   │
-│     YES → back to Phase 5           │
-│     NO  → exit loop                 │
-└──────────────────────────────────────┘
-   ↓ Loop exits ONLY when 0 issues remain
-Phase 7: Final Report
-   ↓ Output consolidated review report
+┌─────────────────────────────────────────────────┐
+│  Claude Session                                 │
+│                                                 │
+│  Phase 1: Scope Analysis                        │
+│  Phase 2: Self-Review                           │
+│  Phase 3: Multi-AI Review                       │
+│  Phase 4: Synthesize → state.json 생성          │
+│  Phase 5: Fix Issues → remaining_issues 업데이트│
+│  Phase 6: 세션 종료 시도                         │
+│       ↓                                         │
+│  ┌──────────────────────────────────┐           │
+│  │ Stop Hook (.claude/hooks/        │           │
+│  │   ralph-loop-hook.sh)            │           │
+│  │                                  │           │
+│  │ remaining_issues > 0?            │           │
+│  │   YES → exit 2 (종료 차단)       │           │
+│  │         재리뷰 프롬프트 주입      │           │
+│  │   NO  → exit 0 (종료 허용)       │           │
+│  └──────────────────────────────────┘           │
+│       ↓ (차단 시)                                │
+│  Phase 5로 복귀: 재리뷰 + 수정                   │
+│  Phase 6: 다시 종료 시도 ...                     │
+└─────────────────────────────────────────────────┘
 ```
 
-**Core Rule: Phase 5 → Phase 6 loop repeats WITHOUT any iteration limit. The loop exits ONLY when re-review finds zero issues across ALL reviewers.**
+## State File
+
+리뷰 루프 상태는 `.claude/loop-state.json`으로 관리한다.
+
+### 상태 파일 생성 (Phase 4 완료 시)
+
+```bash
+cat > .claude/loop-state.json << 'STATEEOF'
+{
+  "status": "active",
+  "skill": "review-ralph",
+  "iteration": 1,
+  "remaining_issues": <CRITICAL + WARNING 개수>,
+  "total_found": <전체 이슈 수>,
+  "files_reviewed": ["path/to/file1.ts", "path/to/file2.ts"],
+  "reviewers": ["claude", "codex", "gemini"]
+}
+STATEEOF
+```
+
+### 상태 업데이트 (수정 후)
+
+수정이 완료될 때마다 remaining_issues를 갱신한다:
+
+```bash
+# 이슈 수 업데이트
+jq '.remaining_issues = <남은 수>' .claude/loop-state.json > .claude/loop-state.json.tmp && mv .claude/loop-state.json.tmp .claude/loop-state.json
+```
+
+### 루프 종료 (모든 이슈 해결 시)
+
+```bash
+# 모든 리뷰어가 이슈 0개 확인 시
+jq '.remaining_issues = 0 | .status = "complete"' .claude/loop-state.json > .claude/loop-state.json.tmp && mv .claude/loop-state.json.tmp .claude/loop-state.json
+```
+
+**중요:** remaining_issues를 0으로 설정하면 다음 종료 시도에서 hook이 종료를 허용한다.
+
+---
 
 ## Phase 1: Scope Analysis
 
-Identify what needs to be reviewed:
+리뷰 대상을 식별한다:
 
 ```bash
-# Check git changes
 git diff --stat HEAD~1
 git diff --name-only
 git status
 ```
 
-If `$ARGUMENTS` is provided, review the specified files/scope instead of git changes.
+`$ARGUMENTS`가 제공되면 해당 파일/범위를 대신 리뷰한다.
 
-Categorize targets:
+대상 분류:
 | Type | Examples |
 |------|---------|
 | Code changes | Modified/added source files |
@@ -60,7 +97,7 @@ Categorize targets:
 
 ## Phase 2: Self-Review (Claude)
 
-Perform a detailed review covering:
+다음을 커버하는 상세 리뷰 수행:
 
 ### Code Quality
 - Logic errors, edge cases, off-by-one errors
@@ -80,29 +117,29 @@ Perform a detailed review covering:
 - Types/interfaces properly defined
 - Cross-file consistency (dispatchers, registrations, mappings)
 
-Document all findings with file paths and line numbers.
+모든 발견 사항을 파일 경로와 라인 번호로 문서화한다.
 
 ## Phase 3: Multi-AI Review
 
 ### CLI Availability Check
 
-Each CLI를 2단계로 판별: **설치 여부** → **인증 여부**. 이 두 가지만 실패하면 스킵하고, 그 외 모든 경우는 실행 가능한 방법을 찾아서 반드시 실행한다.
+각 CLI를 2단계로 판별: **설치 여부** -> **인증 여부**. 이 두 가지만 실패하면 스킵하고, 그 외 모든 경우는 실행 가능한 방법을 찾아서 반드시 실행한다.
 
 ```
 CLI 판별 흐름:
 
   CLI 설치됨?
-    NO  → SKIP (not installed)
-    YES ↓
+    NO  -> SKIP (not installed)
+    YES |
   인증됨?
-    NO  → SKIP (not authenticated)
-    YES ↓
+    NO  -> SKIP (not authenticated)
+    YES |
   기본 명령 실행됨?
-    YES → 그대로 사용
-    NO  ↓
+    YES -> 그대로 사용
+    NO  |
   대체 실행 방법 탐색 (npx, 전체 경로, 다른 플래그...)
-    찾음 → 해당 방법으로 실행
-    못찾음 → 에러 내용 보고 후 계속 시도 (절대 스킵 안 함)
+    찾음 -> 해당 방법으로 실행
+    못찾음 -> 에러 내용 보고 후 계속 시도 (절대 스킵 안 함)
 ```
 
 **스킵하는 경우 (이 2가지만):**
@@ -113,21 +150,18 @@ CLI 판별 흐름:
 | **미인증** | 실행 시 auth/login/credential 관련 에러 출력 | 스킵, 로그에 "not authenticated" 기록 |
 
 **스킵하지 않는 경우 (반드시 실행 방법을 찾는다):**
-- PATH에 없지만 설치는 됨 → 전체 경로, npx, 글로벌 경로 탐색
-- 특정 서브커맨드가 실패 → 다른 서브커맨드/플래그 시도
-- 권한 문제 → `chmod +x` 또는 `node` 직접 실행
-- 버전 호환성 문제 → 사용 가능한 옵션으로 조정
+- PATH에 없지만 설치는 됨 -> 전체 경로, npx, 글로벌 경로 탐색
+- 특정 서브커맨드가 실패 -> 다른 서브커맨드/플래그 시도
+- 권한 문제 -> `chmod +x` 또는 `node` 직접 실행
+- 버전 호환성 문제 -> 사용 가능한 옵션으로 조정
 
 ### Step 1: 설치 확인
-
-각 CLI에 대해 순차적으로 시도. 하나라도 성공하면 해당 명령어를 저장:
 
 ```bash
 # Codex 설치 확인
 command -v codex 2>/dev/null \
   || which codex 2>/dev/null \
   || npx codex --version 2>/dev/null \
-  || ls ~/.npm/_npx/*/node_modules/.bin/codex 2>/dev/null \
   || echo "CODEX_NOT_INSTALLED"
 
 # Gemini 설치 확인
@@ -148,7 +182,6 @@ command -v claude 2>/dev/null \
 설치된 CLI만 대상. 짧은 테스트 프롬프트로 인증 상태 확인:
 
 ```bash
-# 각 CLI에 최소한의 프롬프트를 보내서 인증 에러 여부 확인
 $CMD "test" 2>&1 | head -5
 ```
 
@@ -168,7 +201,7 @@ $CMD "test" 2>&1 | head -5
 | 5 | node 직접 실행 | `node $(which codex) "..."` |
 | 6 | 파이프 입력 | `echo "..." \| codex` |
 
-실행 실패 시 에러 메시지를 분석하여 다음 방법을 시도. **미설치/미인증이 아닌 에러는 절대 스킵 사유가 아님.**
+**모든 대체 방법 실패 시:** 에러 메시지를 Final Report에 기록하되, 미설치/미인증이 아니면 사용자에게 수동 실행을 안내한다.
 
 ### Individual CLI Calls
 
@@ -181,36 +214,11 @@ Code from $FILE:
 $(cat "$FILE")"
 ```
 
-실행 실패 시 대체 시도:
-```bash
-# 대체 1: exec 없이 직접
-codex "Review this code. Report issues as numbered list with severity (CRITICAL/WARNING/INFO). File: $FILE
-$(cat "$FILE")"
-
-# 대체 2: npx
-npx codex exec "..."
-
-# 대체 3: 전체 경로
-$(which codex) exec "..."
-```
-
 **Gemini** (설치+인증 확인됨):
 ```bash
 gemini "Perform a thorough code review focusing on architecture, security, and performance. Report issues as a numbered list with severity (CRITICAL/WARNING/INFO). For each issue include: file path, line reference, description, and suggested fix.
 
 Code: $(cat <file>)"
-```
-
-실행 실패 시 대체 시도:
-```bash
-# 대체 1: npx
-npx gemini "..."
-
-# 대체 2: 전체 경로
-$(which gemini) "..."
-
-# 대체 3: 파이프 입력
-cat <file> | gemini "Review this code..."
 ```
 
 **Claude CLI** (설치+인증 확인됨):
@@ -220,31 +228,16 @@ claude -p "Perform a thorough code review focusing on correctness, consistency, 
 Code: $(cat <file>)"
 ```
 
-실행 실패 시 대체 시도:
-```bash
-# 대체 1: --print 플래그
-claude --print "Review this code..." < <(cat <file>)
-
-# 대체 2: npx
-npx @anthropic-ai/claude-code -p "..."
-
-# 대체 3: 전체 경로
-$(which claude) -p "..."
-```
-
-**모든 대체 방법 실패 시:** 에러 메시지를 Final Report에 기록하되, 미설치/미인증이 아니면 사용자에게 수동 실행을 안내한다. (자동 스킵 금지)
-
 ### Large Changeset (5+ files)
 
-Batch related files together with context:
 ```bash
-codex exec --model gpt-5.3-codex "Review these related modules for consistency and correctness:
+codex exec "Review these related modules for consistency and correctness:
 $(for f in file1.ts file2.ts file3.ts; do echo "=== $f ==="; cat "$f"; done)"
 ```
 
-## Phase 4: Synthesize Findings
+## Phase 4: Synthesize Findings + State 초기화
 
-Merge all review feedback into a unified issue list:
+리뷰 피드백을 통합하고 **상태 파일을 생성**한다:
 
 ```markdown
 ## Review Findings
@@ -264,77 +257,79 @@ Merge all review feedback into a unified issue list:
 ```
 
 Deduplication rules:
-- Same issue from multiple AIs → merge, note agreement (higher confidence)
-- Conflicting opinions → evaluate both, pick the better-reasoned one
-- False positives → discard with brief explanation
+- Same issue from multiple AIs -> merge, note agreement (higher confidence)
+- Conflicting opinions -> evaluate both, pick the better-reasoned one
+- False positives -> discard with brief explanation
 
-## Phase 5: Fix Issues
+**통합 완료 후 상태 파일을 생성한다** (CRITICAL + WARNING 합산):
 
-Apply fixes for all CRITICAL and WARNING items:
-
-1. Fix one issue at a time
-2. Verify the fix doesn't break related code
-3. Mark each issue as resolved in the findings table
-4. For INFO items, apply only if clearly beneficial
-
-**Important:** Do not batch fixes — apply them individually to ensure each fix is correct and doesn't introduce new issues.
-
-## Phase 6: Re-Review (Mandatory Loop)
-
-**This is the critical iteration phase. There is NO iteration limit. Repeat until every reviewer reports zero issues.**
-
-```
-┌─────────────────────────────────────────────┐
-│          REVIEW-FIX LOOP (no limit)         │
-│                                             │
-│  1. Re-read all fixed files                 │
-│  2. Claude self-review                      │
-│  3. External AI re-review (if available)    │
-│  4. Evaluate results:                       │
-│     - ANY issue found → Fix → Loop again    │
-│     - ZERO issues from ALL → Exit to Ph.7   │
-└─────────────────────────────────────────────┘
+```bash
+cat > .claude/loop-state.json << 'STATEEOF'
+{
+  "status": "active",
+  "skill": "review-ralph",
+  "iteration": 1,
+  "remaining_issues": <CRITICAL + WARNING 합산 수>,
+  "total_found": <전체 이슈 수>,
+  "files_reviewed": [<리뷰 대상 파일 목록>],
+  "reviewers": [<사용된 리뷰어 목록>]
+}
+STATEEOF
 ```
 
-### Re-Review Process
+이슈가 0개이면 `"status": "complete"`, `"remaining_issues": 0`으로 생성한다.
 
-Each iteration performs a **full re-review** of all changed files:
+## Phase 5: Fix Issues + State 업데이트
 
-1. **Re-read the fixed files** — verify every change is correct
-2. **Claude self-review** — check fixes are correct, complete, and introduce no regressions
-3. **External AI re-review** (if CLIs available):
-   ```bash
-   FILE=<fixed-file>
-   codex exec --model gpt-5.3-codex "Re-review this code. Previous issues were fixed. Verify all fixes are correct and check for any new issues introduced by the fixes. If everything looks good, respond with 'ALL CLEAR - no issues found'. Otherwise list remaining issues with severity.
+CRITICAL과 WARNING 항목을 수정한다:
 
-   Code from $FILE:
-   $(cat "$FILE")"
-   ```
-   ```bash
-   gemini "Re-review this code. Previous issues were fixed. Verify all fixes are correct and check for any new issues introduced. If everything looks good, respond with 'ALL CLEAR - no issues found'. Otherwise list remaining issues with severity.
+1. 한 번에 하나의 이슈만 수정
+2. 수정이 관련 코드를 깨뜨리지 않는지 확인
+3. INFO 항목은 명확히 유익한 경우에만 적용
 
-   Code: $(cat <fixed-file>)"
-   ```
-   ```bash
-   claude -p "Re-review this code. Previous issues were fixed. Verify all fixes are correct and check for any new issues introduced. If everything looks good, respond with 'ALL CLEAR - no issues found'. Otherwise list remaining issues with severity.
+**수정 후 반드시 상태 파일을 업데이트한다:**
 
-   Code: $(cat <fixed-file>)"
-   ```
-4. **Evaluate re-review results:**
-   - **ANY reviewer reports issues** → apply fixes (Phase 5) → re-review again (Phase 6)
-   - **ALL reviewers report "ALL CLEAR"** → proceed to Phase 7
+```bash
+jq '.remaining_issues = <남은 CRITICAL + WARNING 수>' .claude/loop-state.json > .claude/loop-state.json.tmp && mv .claude/loop-state.json.tmp .claude/loop-state.json
+```
 
-### Loop Rules
+수정 완료 후:
+- 자체 재리뷰로 수정 사항 검증
+- 사용 가능한 외부 AI CLI로 재리뷰 실행
+- 새로운 이슈가 발견되면 remaining_issues에 반영
+- 모든 리뷰어가 이슈 0개를 확인하면:
 
-| Rule | Description |
-|------|-------------|
-| **No iteration limit** | Loop continues until zero issues remain — no max cap |
-| **Full re-review each round** | Every iteration re-reviews ALL changed files, not just newly fixed ones |
-| **New issues count equally** | Issues introduced by fixes are treated the same as original issues |
-| **All reviewers must agree** | Exit requires ALL available reviewers to report zero issues |
-| **Track iteration count** | Log each iteration number for the final report |
+```bash
+jq '.remaining_issues = 0 | .status = "complete"' .claude/loop-state.json > .claude/loop-state.json.tmp && mv .claude/loop-state.json.tmp .claude/loop-state.json
+```
 
-## Phase 7: Final Report
+**Phase 5 완료 후 세션을 종료한다. Stop hook이 remaining_issues를 확인하여 루프를 제어한다.**
+
+### Re-Review 시 외부 AI 호출
+
+```bash
+FILE=<fixed-file>
+codex exec "Re-review this code. Previous issues were fixed. Verify all fixes are correct and check for any new issues. If everything looks good, respond with 'ALL CLEAR'. Otherwise list remaining issues with severity.
+
+Code from $FILE:
+$(cat "$FILE")"
+```
+
+```bash
+gemini "Re-review this code. Previous issues were fixed. Verify all fixes are correct and check for any new issues. If everything looks good, respond with 'ALL CLEAR'. Otherwise list remaining issues with severity.
+
+Code: $(cat <fixed-file>)"
+```
+
+```bash
+claude -p "Re-review this code. Previous issues were fixed. Verify all fixes are correct and check for any new issues. If everything looks good, respond with 'ALL CLEAR'. Otherwise list remaining issues with severity.
+
+Code: $(cat <fixed-file>)"
+```
+
+## Phase 6: Final Report
+
+remaining_issues가 0이 되어 세션이 정상 종료될 때, 최종 리포트를 출력한다:
 
 ```markdown
 ## Review Complete
@@ -343,7 +338,7 @@ Each iteration performs a **full re-review** of all changed files:
 - Files reviewed: N
 - Issues found: N (CRITICAL: X, WARNING: Y, INFO: Z)
 - Issues fixed: N
-- Review iterations: N
+- Review iterations: N (check state file)
 - Reviewers: Claude, Codex, Gemini (or subset)
 
 ### Review Details
@@ -372,4 +367,6 @@ Each iteration performs a **full re-review** of all changed files:
 - Do not send sensitive data (credentials, secrets, .env) to external AIs
 - Keep re-review iterations focused on changed files only, not the entire codebase
 - If the changeset is trivial (typo fix, comment change), skip external AI review
+- **상태 파일은 반드시 jq로 업데이트한다** (직접 echo/cat으로 덮어쓰지 않는다)
+- **remaining_issues를 정확히 관리한다** — 이 값이 루프 종료 조건이다
 - Response times for external AIs may be 30+ seconds per query
