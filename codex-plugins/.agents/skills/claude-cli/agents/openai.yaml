@@ -1,0 +1,4 @@
+interface:
+  display_name: "Claude Code CLI"
+  short_description: "Run an isolated Claude Code pass"
+  default_prompt: "Use $claude-cli to run a separate Claude Code review for this file or design question."

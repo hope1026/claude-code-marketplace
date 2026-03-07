@@ -1,0 +1,4 @@
+interface:
+  display_name: "AI Council"
+  short_description: "Compare Claude Code and Gemini"
+  default_prompt: "Use $ai-council to compare $claude-cli and Gemini on this coding decision."

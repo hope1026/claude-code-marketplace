@@ -1,0 +1,4 @@
+interface:
+  display_name: "Review Ralph"
+  short_description: "Run a resumable review workflow"
+  default_prompt: "Use $review-ralph to review the current changes and track findings in .task-cache."

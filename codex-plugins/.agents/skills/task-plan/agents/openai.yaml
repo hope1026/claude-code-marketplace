@@ -1,0 +1,4 @@
+interface:
+  display_name: "Task Plan"
+  short_description: "Plan work into resumable phases"
+  default_prompt: "Use $task-plan to break this work into phases and initialize .task-cache."

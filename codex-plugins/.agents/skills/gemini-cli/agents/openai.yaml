@@ -1,0 +1,4 @@
+interface:
+  display_name: "Gemini CLI"
+  short_description: "Use Gemini for external code review"
+  default_prompt: "Use $gemini-cli to get an external architecture or security review for this task."
