@@ -9,6 +9,11 @@ export async function runCancelCommand(argv: string[]): Promise<number> {
   const stateDirectoryPath = getSingleFlag(parsedArgs, "--state-dir");
   const jsonMode = hasFlag(parsedArgs, "--json");
 
+  if (workspacePath === undefined && stateDirectoryPath === undefined) {
+    printError("Either --workspace or --state-dir is required.");
+    return 1;
+  }
+
   try {
     const snapshot = await cancelJob({
       jobId,

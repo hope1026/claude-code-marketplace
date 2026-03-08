@@ -11,6 +11,19 @@ const execFileAsync = promisify(execFile);
 const repoRoot = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const cliPath = resolve(repoRoot, "dist/cli.js");
 
+test("start requires workspace", async () => {
+  const failed = await runCliExpectFailure([
+    "start",
+    "--title",
+    "Missing Workspace",
+    "--agent",
+    "custom-command",
+    "--json"
+  ]);
+
+  assert.match(failed.stderr, /--workspace/i);
+});
+
 test("start/status use workspace .ralph-cache by default", async () => {
   const workspacePath = await mkdtemp(join(tmpdir(), "ralph-start-"));
 
@@ -95,6 +108,9 @@ test("resume handles completed follow-up tasks and completes the job", async () 
     const result = await runCli(["result", "--workspace", workspacePath, "--json"]);
 
     assert.equal(result.status, "completed");
+    assert.match(result.final_summary, /run-001/i);
+    assert.match(result.final_summary, /first pass completed with follow-up/);
+    assert.match(result.final_summary, /run-002/i);
     assert.match(result.final_summary, /follow-up completed/);
     assert.match(result.user_checks, /Inspect final marker/);
     assert.equal(result.latest_agent_result.status, "completed");
@@ -109,6 +125,221 @@ test("resume handles completed follow-up tasks and completes the job", async () 
     );
     const firstRunResult = JSON.parse(await readFile(firstRunResultPath, "utf8"));
     assert.equal(firstRunResult.status, "completed");
+  } finally {
+    await rm(workspacePath, { recursive: true, force: true });
+  }
+});
+
+test("resume blocks when no runnable task is available", async () => {
+  const workspacePath = await mkdtemp(join(tmpdir(), "ralph-no-runnable-"));
+
+  try {
+    const start = await runCli([
+      "start",
+      "--title",
+      "No Runnable Integration",
+      "--agent",
+      "custom-command",
+      "--workspace",
+      workspacePath,
+      "--json"
+    ]);
+
+    const jobDirectoryPath = join(start.state_directory_path, "jobs", start.job_id);
+    const tasksPath = join(jobDirectoryPath, "tasks.json");
+    const runtimePath = join(jobDirectoryPath, "runtime.json");
+
+    await writeFile(
+      tasksPath,
+      JSON.stringify(
+        {
+          phases: [{ id: "PHASE-001", title: "Blocked Phase" }],
+          tasks: [
+            {
+              id: "TASK-001",
+              phaseId: "PHASE-001",
+              title: "Task A",
+              description: "Task A",
+              status: "pending"
+            },
+            {
+              id: "TASK-002",
+              phaseId: "PHASE-001",
+              title: "Task B",
+              description: "Task B",
+              status: "pending"
+            }
+          ],
+          dependencies: {
+            "TASK-001": ["TASK-002"],
+            "TASK-002": ["TASK-001"]
+          },
+          retryCounts: {
+            "TASK-001": 0,
+            "TASK-002": 0
+          },
+          evidenceLinks: {
+            "TASK-001": [],
+            "TASK-002": []
+          },
+          phaseGateStatus: {
+            "PHASE-001": "pending"
+          }
+        },
+        null,
+        2
+      ) + "\n",
+      "utf8"
+    );
+    await writeFile(
+      runtimePath,
+      JSON.stringify(
+        {
+          currentPhaseId: "PHASE-001",
+          currentTaskId: "TASK-001",
+          remainingTaskCount: 2,
+          lastRunId: null,
+          nextAction: "resume",
+          blockedReason: null,
+          lastValidationStatus: "pending"
+        },
+        null,
+        2
+      ) + "\n",
+      "utf8"
+    );
+
+    const resume = await runCli(["resume", "--workspace", workspacePath, "--json"]);
+    assert.equal(resume.job_status, "blocked");
+    assert.equal(resume.iterations, 0);
+    assert.equal(resume.run_id, null);
+    assert.match(resume.blocked_reason, /no runnable task/i);
+
+    const status = await runCli(["status", "--workspace", workspacePath, "--json"]);
+    assert.equal(status.status, "blocked");
+    assert.match(status.blocked_reason, /dependencies are incomplete/i);
+  } finally {
+    await rm(workspacePath, { recursive: true, force: true });
+  }
+});
+
+test("phase gating runs earlier phases before later phases", async () => {
+  const workspacePath = await mkdtemp(join(tmpdir(), "ralph-phase-gate-"));
+
+  try {
+    const start = await runCli([
+      "start",
+      "--title",
+      "Phase Gate Integration",
+      "--agent",
+      "custom-command",
+      "--workspace",
+      workspacePath,
+      "--json"
+    ]);
+
+    const jobDirectoryPath = join(start.state_directory_path, "jobs", start.job_id);
+    const tasksPath = join(jobDirectoryPath, "tasks.json");
+    const runtimePath = join(jobDirectoryPath, "runtime.json");
+
+    await writeFile(
+      tasksPath,
+      JSON.stringify(
+        {
+          phases: [
+            { id: "PHASE-001", title: "Phase 1" },
+            { id: "PHASE-002", title: "Phase 2" }
+          ],
+          tasks: [
+            {
+              id: "TASK-001",
+              phaseId: "PHASE-001",
+              title: "First phase task",
+              description: "First phase task",
+              status: "pending"
+            },
+            {
+              id: "TASK-002",
+              phaseId: "PHASE-002",
+              title: "Second phase task",
+              description: "Second phase task",
+              status: "pending"
+            }
+          ],
+          dependencies: {
+            "TASK-001": [],
+            "TASK-002": []
+          },
+          retryCounts: {
+            "TASK-001": 0,
+            "TASK-002": 0
+          },
+          evidenceLinks: {
+            "TASK-001": [],
+            "TASK-002": []
+          },
+          phaseGateStatus: {
+            "PHASE-001": "pending",
+            "PHASE-002": "pending"
+          }
+        },
+        null,
+        2
+      ) + "\n",
+      "utf8"
+    );
+    await writeFile(
+      runtimePath,
+      JSON.stringify(
+        {
+          currentPhaseId: "PHASE-001",
+          currentTaskId: "TASK-001",
+          remainingTaskCount: 2,
+          lastRunId: null,
+          nextAction: "resume",
+          blockedReason: null,
+          lastValidationStatus: "pending"
+        },
+        null,
+        2
+      ) + "\n",
+      "utf8"
+    );
+
+    const customCommand =
+      "if grep -q 'TASK-001' \"$RALPH_PROMPT_PATH\"; then " +
+      "printf '{\"status\":\"completed\",\"task_id\":\"TASK-001\",\"summary\":\"phase one done\",\"changed_files\":[],\"artifacts\":[],\"follow_up_tasks\":[],\"user_checks\":[],\"validation_hints\":[],\"blockers\":[]}\\n' > \"$RALPH_OUTPUT_PATH\"; " +
+      "else " +
+      "printf '{\"status\":\"completed\",\"task_id\":\"TASK-002\",\"summary\":\"phase two done\",\"changed_files\":[],\"artifacts\":[],\"follow_up_tasks\":[],\"user_checks\":[],\"validation_hints\":[],\"blockers\":[]}\\n' > \"$RALPH_OUTPUT_PATH\"; " +
+      "fi";
+
+    const firstResume = await runCli(
+      ["resume", "--workspace", workspacePath, "--max-iterations", "1", "--json"],
+      {
+        env: {
+          ...process.env,
+          RALPH_CUSTOM_AGENT_COMMAND: customCommand
+        }
+      }
+    );
+    assert.equal(firstResume.job_status, "running");
+    assert.equal(firstResume.run_id, "run-001");
+
+    const firstStatus = await runCli(["status", "--workspace", workspacePath, "--json"]);
+    assert.equal(firstStatus.current_phase_id, "PHASE-002");
+    assert.equal(firstStatus.current_task_id, "TASK-002");
+
+    const secondResume = await runCli(
+      ["resume", "--workspace", workspacePath, "--json"],
+      {
+        env: {
+          ...process.env,
+          RALPH_CUSTOM_AGENT_COMMAND: customCommand
+        }
+      }
+    );
+    assert.equal(secondResume.job_status, "completed");
+    assert.equal(secondResume.run_id, "run-002");
   } finally {
     await rm(workspacePath, { recursive: true, force: true });
   }
@@ -212,6 +443,50 @@ test("resume prewrites running state, placeholder logs, and path-only input refe
   }
 });
 
+test("RALPH_OUTPUT_PATH points at result.json", async () => {
+  const workspacePath = await mkdtemp(join(tmpdir(), "ralph-output-path-"));
+
+  const customCommand =
+    "node -e 'const fs=require(\"fs\");" +
+    "if(!process.env.RALPH_OUTPUT_PATH.endsWith(\"result.json\")){process.exit(7)};" +
+    "fs.writeFileSync(process.env.RALPH_OUTPUT_PATH, JSON.stringify({" +
+    "status:\"completed\",task_id:\"TASK-001\",summary:\"output path verified\",changed_files:[],artifacts:[],follow_up_tasks:[],user_checks:[],validation_hints:[],blockers:[]" +
+    "}, null, 2));'";
+
+  try {
+    const start = await runCli([
+      "start",
+      "--title",
+      "Output Path Integration",
+      "--agent",
+      "custom-command",
+      "--workspace",
+      workspacePath,
+      "--json"
+    ]);
+
+    const resume = await runCli(
+      ["resume", "--workspace", workspacePath, "--json"],
+      {
+        env: {
+          ...process.env,
+          RALPH_CUSTOM_AGENT_COMMAND: customCommand
+        }
+      }
+    );
+
+    assert.equal(resume.job_status, "completed");
+
+    const runDirectoryPath = join(start.state_directory_path, "jobs", start.job_id, "runs", "run-001");
+    const resultPath = join(runDirectoryPath, "result.json");
+    const result = JSON.parse(await readFile(resultPath, "utf8"));
+    assert.equal(result.summary, "output path verified");
+    await assert.rejects(readFile(join(runDirectoryPath, "agent-output.json"), "utf8"));
+  } finally {
+    await rm(workspacePath, { recursive: true, force: true });
+  }
+});
+
 test("validation failure retries once and then fails", async () => {
   const workspacePath = await mkdtemp(join(tmpdir(), "ralph-validation-"));
   const customCommand =
@@ -250,6 +525,79 @@ test("validation failure retries once and then fails", async () => {
     assert.equal(status.status, "failed");
     assert.equal(status.retry_counts["TASK-001"], 1);
     assert.equal(status.last_validation_status, "failed");
+  } finally {
+    await rm(workspacePath, { recursive: true, force: true });
+  }
+});
+
+test("timeout errors are classified with the standard timeout code", async () => {
+  const workspacePath = await mkdtemp(join(tmpdir(), "ralph-timeout-"));
+
+  try {
+    await runCli([
+      "start",
+      "--title",
+      "Timeout Integration",
+      "--agent",
+      "custom-command",
+      "--workspace",
+      workspacePath,
+      "--max-retries",
+      "0",
+      "--json"
+    ]);
+
+    const resume = await runCli(
+      ["resume", "--workspace", workspacePath, "--json"],
+      {
+        env: {
+          ...process.env,
+          RALPH_CUSTOM_AGENT_COMMAND: "sleep 1",
+          RALPH_AGENT_TIMEOUT_MS: "10"
+        }
+      }
+    );
+
+    assert.equal(resume.job_status, "failed");
+
+    const result = await runCli(["result", "--workspace", workspacePath, "--json"]);
+    assert.equal(result.latest_run_record.errorCode, "timeout");
+  } finally {
+    await rm(workspacePath, { recursive: true, force: true });
+  }
+});
+
+test("auth-required errors are classified with the standard auth_required code", async () => {
+  const workspacePath = await mkdtemp(join(tmpdir(), "ralph-auth-required-"));
+
+  try {
+    await runCli([
+      "start",
+      "--title",
+      "Auth Required Integration",
+      "--agent",
+      "custom-command",
+      "--workspace",
+      workspacePath,
+      "--max-retries",
+      "0",
+      "--json"
+    ]);
+
+    const resume = await runCli(
+      ["resume", "--workspace", workspacePath, "--json"],
+      {
+        env: {
+          ...process.env,
+          RALPH_CUSTOM_AGENT_COMMAND: "echo 'login required' 1>&2; exit 1"
+        }
+      }
+    );
+
+    assert.equal(resume.job_status, "failed");
+
+    const result = await runCli(["result", "--workspace", workspacePath, "--json"]);
+    assert.equal(result.latest_run_record.errorCode, "auth_required");
   } finally {
     await rm(workspacePath, { recursive: true, force: true });
   }

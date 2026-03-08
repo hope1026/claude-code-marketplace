@@ -17,6 +17,10 @@ import {
 import { slugify, toIsoTimestamp } from "../shared/utils/format.js";
 import type { ValidationRecord } from "../validation/index.js";
 import type { JobRecord, JobSnapshot, TaskStatus } from "./types.js";
+import {
+  derivePhaseGateStatus,
+  isTaskTerminal
+} from "./rules.js";
 
 export const jobFeature = {
   name: "job"
@@ -25,7 +29,7 @@ export const jobFeature = {
 export interface CreateJobOptions {
   title: string;
   agent: SupportedAgent;
-  workspacePath?: string;
+  workspacePath: string;
   stateDirectoryPath?: string;
   inputDocuments: string[];
   validateCommands?: string[];
@@ -173,7 +177,7 @@ export async function cancelJob(options: LoadJobOptions): Promise<JobSnapshot> {
     tasks: {
       ...snapshot.tasks,
       tasks: updatedTasks,
-      phaseGateStatus: derivePhaseGateStatus(snapshot.tasks.phases.map((phase) => phase.id), updatedTasks)
+      phaseGateStatus: derivePhaseGateStatus(snapshot.tasks.phases, updatedTasks)
     },
     runtime: {
       ...snapshot.runtime,
@@ -250,26 +254,5 @@ function buildJobId(title: string): string {
 }
 
 function isTerminalTaskStatus(status: TaskStatus): boolean {
-  return ["completed", "partial", "blocked", "failed", "cancelled"].includes(status);
-}
-
-function derivePhaseGateStatus(
-  phaseIds: string[],
-  tasks: JobSnapshot["tasks"]["tasks"]
-): JobSnapshot["tasks"]["phaseGateStatus"] {
-  return Object.fromEntries(
-    phaseIds.map((phaseId) => {
-      const phaseTasks = tasks.filter((task) => task.phaseId === phaseId);
-
-      if (phaseTasks.some((task) => ["failed", "blocked"].includes(task.status))) {
-        return [phaseId, "failed"];
-      }
-
-      if (phaseTasks.length > 0 && phaseTasks.every((task) => task.status === "completed")) {
-        return [phaseId, "passed"];
-      }
-
-      return [phaseId, "pending"];
-    })
-  );
+  return isTaskTerminal(status);
 }

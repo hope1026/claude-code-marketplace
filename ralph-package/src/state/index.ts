@@ -42,10 +42,14 @@ export interface RunPaths {
 }
 
 export function resolveWorkspacePath(
-  workspacePath?: string,
+  workspacePath: string,
   cwd = process.cwd()
 ): string {
-  return resolve(cwd, workspacePath ?? ".");
+  if (workspacePath.trim().length === 0) {
+    throw new Error("`workspacePath` must not be empty.");
+  }
+
+  return resolve(cwd, workspacePath);
 }
 
 export function resolveStateDirectoryPath({
@@ -55,6 +59,10 @@ export function resolveStateDirectoryPath({
 }: ResolveStateOptions): string {
   if (stateDirectoryPath !== undefined) {
     return resolve(cwd, stateDirectoryPath);
+  }
+
+  if (workspacePath === undefined) {
+    throw new Error("`workspacePath` is required when `stateDirectoryPath` is not provided.");
   }
 
   const resolvedWorkspacePath = resolveWorkspacePath(workspacePath, cwd);
@@ -155,15 +163,16 @@ export function getRunPaths(
   runId: string
 ): RunPaths {
   const runDirectoryPath = join(runsDirectoryPath, runId);
+  const resultPath = join(runDirectoryPath, "result.json");
 
   return {
     runDirectoryPath,
     promptPath: join(runDirectoryPath, "prompt.md"),
-    resultPath: join(runDirectoryPath, "result.json"),
+    resultPath,
     runRecordPath: join(runDirectoryPath, "run-record.json"),
     stdoutLogPath: join(runDirectoryPath, "stdout.log"),
     stderrLogPath: join(runDirectoryPath, "stderr.log"),
-    outputPath: join(runDirectoryPath, "agent-output.json")
+    outputPath: resultPath
   };
 }
 

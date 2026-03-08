@@ -3,7 +3,9 @@ import { resolve } from "node:path";
 import type {
   InputDocumentKind,
   InputDocumentRecord,
+  PhaseRecord,
   RuntimeRecord,
+  TaskRecord,
   TasksRecord
 } from "../job/types.js";
 
@@ -41,46 +43,28 @@ export async function createInitialPlan(
     })
   );
 
-  const phaseId = "PHASE-001";
-  const taskId = "TASK-001";
+  const planModel = createDefaultPlanningModel({
+    title: input.title,
+    workspacePath: input.workspacePath,
+    inputDocuments: normalizedInputDocuments
+  });
 
   return {
     normalizedInputDocuments,
-    specMarkdown: buildSpecMarkdown(input.title, normalizedInputDocuments),
-    planMarkdown: buildPlanMarkdown(input.title, normalizedInputDocuments),
+    specMarkdown: buildSpecMarkdown(input.title, input.workspacePath, normalizedInputDocuments),
+    planMarkdown: buildPlanMarkdown(input.title, planModel, normalizedInputDocuments),
     tasks: {
-      phases: [
-        {
-          id: phaseId,
-          title: "Initial Execution"
-        }
-      ],
-      tasks: [
-        {
-          id: taskId,
-          phaseId,
-          title: input.title,
-          description: "Execute the requested job against the provided workspace.",
-          status: "pending"
-        }
-      ],
-      dependencies: {
-        [taskId]: []
-      },
-      retryCounts: {
-        [taskId]: 0
-      },
-      evidenceLinks: {
-        [taskId]: []
-      },
-      phaseGateStatus: {
-        [phaseId]: "pending"
-      }
+      phases: planModel.phases,
+      tasks: planModel.tasks,
+      dependencies: planModel.dependencies,
+      retryCounts: Object.fromEntries(planModel.tasks.map((task) => [task.id, 0])),
+      evidenceLinks: Object.fromEntries(planModel.tasks.map((task) => [task.id, []])),
+      phaseGateStatus: Object.fromEntries(planModel.phases.map((phase) => [phase.id, "pending"]))
     },
     runtime: {
-      currentPhaseId: phaseId,
-      currentTaskId: taskId,
-      remainingTaskCount: 1,
+      currentPhaseId: planModel.phases[0]?.id ?? null,
+      currentTaskId: planModel.tasks[0]?.id ?? null,
+      remainingTaskCount: planModel.tasks.length,
       lastRunId: null,
       nextAction: "resume",
       blockedReason: null,
@@ -89,8 +73,12 @@ export async function createInitialPlan(
   };
 }
 
-function buildSpecMarkdown(title: string, inputDocuments: InputDocumentRecord[]): string {
-  const sections = [`# Job Spec`, "", `Title: ${title}`, ""];
+function buildSpecMarkdown(
+  title: string,
+  workspacePath: string,
+  inputDocuments: InputDocumentRecord[]
+): string {
+  const sections = ["# Job Spec", "", `Title: ${title}`, "", `Workspace: ${workspacePath}`, ""];
 
   if (inputDocuments.length === 0) {
     sections.push("No input documents were provided.");
@@ -109,18 +97,45 @@ function buildSpecMarkdown(title: string, inputDocuments: InputDocumentRecord[])
   return `${sections.join("\n").trimEnd()}\n`;
 }
 
-function buildPlanMarkdown(title: string, inputDocuments: InputDocumentRecord[]): string {
+function buildPlanMarkdown(
+  title: string,
+  planModel: {
+    phases: PhaseRecord[];
+    tasks: TaskRecord[];
+    dependencies: Record<string, string[]>;
+  },
+  inputDocuments: InputDocumentRecord[]
+): string {
   const lines = [
     "# Plan",
     "",
     `Job title: ${title}`,
-    "",
-    "## Initial phase",
-    "",
-    "1. Review the workspace and provided inputs.",
-    "2. Execute the first task in a fresh agent context.",
-    "3. Persist run artifacts and validation state."
+    ""
   ];
+
+  for (const phase of planModel.phases) {
+    lines.push(`## ${phase.id} ${phase.title}`, "");
+
+    const phaseTasks = planModel.tasks.filter((task) => task.phaseId === phase.id);
+
+    if (phaseTasks.length === 0) {
+      lines.push("No tasks.", "");
+      continue;
+    }
+
+    for (const task of phaseTasks) {
+      const dependencies = planModel.dependencies[task.id] ?? [];
+      lines.push(`- ${task.id}: ${task.title}`);
+      lines.push(`  - ${task.description}`);
+      lines.push(
+        dependencies.length === 0
+          ? "  - Dependencies: none"
+          : `  - Dependencies: ${dependencies.join(", ")}`
+      );
+    }
+
+    lines.push("");
+  }
 
   if (inputDocuments.length > 0) {
     lines.push(
@@ -132,6 +147,44 @@ function buildPlanMarkdown(title: string, inputDocuments: InputDocumentRecord[])
   }
 
   return `${lines.join("\n")}\n`;
+}
+
+function createDefaultPlanningModel(input: {
+  title: string;
+  workspacePath: string;
+  inputDocuments: InputDocumentRecord[];
+}): {
+  phases: PhaseRecord[];
+  tasks: TaskRecord[];
+  dependencies: Record<string, string[]>;
+} {
+  const phaseId = "PHASE-001";
+  const taskId = "TASK-001";
+  const inputSummary =
+    input.inputDocuments.length === 0
+      ? "Use the workspace state as the primary source of truth."
+      : `Inspect ${input.inputDocuments.length} referenced input path(s) before making changes.`;
+
+  return {
+    phases: [
+      {
+        id: phaseId,
+        title: "Requested Work"
+      }
+    ],
+    tasks: [
+      {
+        id: taskId,
+        phaseId,
+        title: input.title,
+        description: `${input.title}. ${inputSummary}`,
+        status: "pending"
+      }
+    ],
+    dependencies: {
+      [taskId]: []
+    }
+  };
 }
 
 function detectInputDocumentKind(

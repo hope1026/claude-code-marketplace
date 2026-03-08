@@ -10,14 +10,17 @@ export function isSupportedAgent(value: string): value is SupportedAgent {
 
 export {
   createAdapterFailure,
+  getAdapterDefinition,
   parseAgentResult,
   persistRunLogs,
   runAdapter
 } from "./run.js";
 export type {
+  AdapterDefinition,
   AdapterErrorCode,
   AdapterExecutionFailure,
   AdapterExecutionResult,
+  AdapterPromptContext,
   AdapterRunContext,
   AgentResult,
   RalphRunRecord,

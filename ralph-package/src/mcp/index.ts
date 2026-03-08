@@ -179,7 +179,7 @@ async function callTool(params: Record<string, unknown>): Promise<{
       const result = await createJob({
         title: requireString(args.title, "title"),
         agent: requireAgent(args.agent),
-        workspacePath: asOptionalString(args.workspace_path),
+        workspacePath: requireString(args.workspace_path, "workspace_path"),
         stateDirectoryPath: asOptionalString(args.state_dir),
         inputDocuments: asStringArray(args.input_documents),
         validateCommands: asStringArray(args.validation_commands),

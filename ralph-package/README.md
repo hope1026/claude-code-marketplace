@@ -42,6 +42,7 @@ ralph cancel --workspace /path/to/project
 - `RALPH_RUN_DIRECTORY_PATH`
 
 The command must write a valid `result.json` payload to `RALPH_OUTPUT_PATH`.
+`RALPH_OUTPUT_PATH` points directly to the run's `result.json` file.
 
 ## Specs
 

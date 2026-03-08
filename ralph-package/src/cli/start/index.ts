@@ -24,6 +24,11 @@ export async function runStartCommand(argv: string[]): Promise<number> {
     return 1;
   }
 
+  if (workspacePath === undefined) {
+    printError("Missing required option: --workspace");
+    return 1;
+  }
+
   if (!isSupportedAgent(agent)) {
     printError(
       `Unsupported agent: ${agent}. Supported agents: ${adapterFeature.supported.join(", ")}`

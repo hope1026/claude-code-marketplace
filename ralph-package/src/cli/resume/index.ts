@@ -10,6 +10,11 @@ export async function runResumeCommand(argv: string[]): Promise<number> {
   const maxIterationsRaw = getSingleFlag(parsedArgs, "--max-iterations");
   const jsonMode = hasFlag(parsedArgs, "--json");
 
+  if (workspacePath === undefined && stateDirectoryPath === undefined) {
+    printError("Either --workspace or --state-dir is required.");
+    return 1;
+  }
+
   try {
     const parsedMaxIterations =
       maxIterationsRaw === undefined
@@ -36,22 +41,23 @@ export async function runResumeCommand(argv: string[]): Promise<number> {
       printJson({
         job_id: result.snapshot.job.id,
         job_status: result.snapshot.job.status,
-        run_id: result.runRecord.runId,
-        run_status: result.runRecord.status,
-        summary: result.runRecord.summary,
+        run_id: result.runRecord?.runId ?? null,
+        run_status: result.runRecord?.status ?? null,
+        summary: result.runRecord?.summary ?? result.snapshot.runtime.blockedReason,
         run_directory_path: result.runDirectoryPath,
         iterations: result.iterations,
-        next_action: result.snapshot.runtime.nextAction
+        next_action: result.snapshot.runtime.nextAction,
+        blocked_reason: result.snapshot.runtime.blockedReason
       });
       return 0;
     }
 
     printLine(`Job: ${result.snapshot.job.id}`);
-    printLine(`Run: ${result.runRecord.runId}`);
-    printLine(`Run status: ${result.runRecord.status}`);
+    printLine(`Run: ${result.runRecord?.runId ?? "-"}`);
+    printLine(`Run status: ${result.runRecord?.status ?? "-"}`);
     printLine(`Job status: ${result.snapshot.job.status}`);
-    printLine(`Summary: ${result.runRecord.summary}`);
-    printLine(`Run dir: ${result.runDirectoryPath}`);
+    printLine(`Summary: ${result.runRecord?.summary ?? result.snapshot.runtime.blockedReason ?? "-"}`);
+    printLine(`Run dir: ${result.runDirectoryPath ?? "-"}`);
     printLine(`Iterations: ${String(result.iterations)}`);
     printLine(`Next action: ${result.snapshot.runtime.nextAction}`);
     return 0;

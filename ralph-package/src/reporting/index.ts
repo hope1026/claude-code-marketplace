@@ -1,5 +1,5 @@
 import type { AgentResult, RalphRunRecord } from "../adapters/index.js";
-import { atomicWriteFile, readTextFile } from "../state/index.js";
+import { atomicWriteFile, listDirectoryEntries, readJsonFile, readTextFile } from "../state/index.js";
 
 export const reportingFeature = {
   name: "reporting"
@@ -31,25 +31,61 @@ export async function updateUserChecksReport(
 export async function updateFinalSummaryReport(options: {
   finalSummaryPath: string;
   title: string;
-  runRecord: RalphRunRecord;
+  jobStatus: string;
+  runsDirectoryPath: string;
 }): Promise<void> {
+  const runIds = (await listDirectoryEntries(options.runsDirectoryPath)).sort();
+  const runRecords = (
+    await Promise.all(
+      runIds.map(async (runId) =>
+        readJsonFile<RalphRunRecord>(`${options.runsDirectoryPath}/${runId}/run-record.json`)
+      )
+    )
+  ).filter((record): record is RalphRunRecord => record !== undefined);
+
+  if (runRecords.length === 0) {
+    await atomicWriteFile(
+      options.finalSummaryPath,
+      `# Final Summary\n\nTitle: ${options.title}\n\nStatus: ${options.jobStatus}\n\nPending.\n`
+    );
+    return;
+  }
+
+  const latestRun = runRecords.at(-1)!;
   const lines = [
     "# Final Summary",
     "",
     `Title: ${options.title}`,
     "",
-    `Latest run: ${options.runRecord.runId}`,
-    `Status: ${options.runRecord.status}`,
+    `Status: ${options.jobStatus}`,
+    `Latest run: ${latestRun.runId}`,
+    `Latest run status: ${latestRun.status}`,
     "",
-    options.runRecord.summary
+    "Run history:",
+    ""
   ];
 
-  if (options.runRecord.changedFiles.length > 0) {
-    lines.push("", "Changed files:", "", ...options.runRecord.changedFiles.map((value) => `- ${value}`));
-  }
+  for (const runRecord of runRecords) {
+    lines.push(`## ${runRecord.runId} ${runRecord.taskId}`, "");
+    lines.push(`- Status: ${runRecord.status}`);
+    lines.push(`- Summary: ${runRecord.summary}`);
 
-  if (options.runRecord.blockers.length > 0) {
-    lines.push("", "Blockers:", "", ...options.runRecord.blockers.map((value) => `- ${value}`));
+    if (runRecord.changedFiles.length > 0) {
+      lines.push("- Changed files:");
+      lines.push(...runRecord.changedFiles.map((value) => `  - ${value}`));
+    }
+
+    if (runRecord.followUpTasks.length > 0) {
+      lines.push("- Follow-up tasks:");
+      lines.push(...runRecord.followUpTasks.map((value) => `  - ${value}`));
+    }
+
+    if (runRecord.blockers.length > 0) {
+      lines.push("- Blockers:");
+      lines.push(...runRecord.blockers.map((value) => `  - ${value}`));
+    }
+
+    lines.push("");
   }
 
   await atomicWriteFile(options.finalSummaryPath, `${lines.join("\n")}\n`);

@@ -24,6 +24,21 @@ export interface ValidationRecord {
   commandResults: ValidationCommandResult[];
 }
 
+export function applyValidationOutcome(
+  agentResult: AgentResult,
+  validationRecord: ValidationRecord
+): AgentResult {
+  if (validationRecord.status !== "failed") {
+    return agentResult;
+  }
+
+  return {
+    ...agentResult,
+    status: "failed",
+    blockers: [...agentResult.blockers, validationRecord.summary]
+  };
+}
+
 export async function runValidation(options: {
   jobId: string;
   taskId: string;

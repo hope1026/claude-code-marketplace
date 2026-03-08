@@ -1,6 +1,5 @@
-import { buildExecutionPrompt } from "../adapters/prompts.js";
 import {
-  createAdapterFailure,
+  getAdapterDefinition,
   parseAgentResult,
   persistRunLogs,
   runAdapter
@@ -17,6 +16,16 @@ import type {
   TaskRecord,
   TaskStatus
 } from "../job/types.js";
+import {
+  buildBlockedRuntime,
+  buildNoRunnableTaskReason,
+  countRemainingTasks,
+  derivePhaseGateStatus,
+  isJobTerminal,
+  isTaskTerminal,
+  nextPendingTaskId,
+  selectRunnableTask
+} from "../job/rules.js";
 import { updateFinalSummaryReport, updateUserChecksReport } from "../reporting/index.js";
 import {
   atomicWriteFile,
@@ -26,7 +35,7 @@ import {
   getNextRunId,
   getRunPaths
 } from "../state/index.js";
-import { runValidation } from "../validation/index.js";
+import { applyValidationOutcome, runValidation } from "../validation/index.js";
 
 export const executionFeature = {
   name: "execution"
@@ -42,9 +51,9 @@ export interface ResumeJobOptions {
 
 export interface ResumeJobResult {
   snapshot: JobSnapshot;
-  runRecord: RalphRunRecord;
+  runRecord: RalphRunRecord | null;
   runRecords: RalphRunRecord[];
-  runDirectoryPath: string;
+  runDirectoryPath: string | null;
   iterations: number;
 }
 
@@ -70,6 +79,7 @@ export async function resumeJob(
     const runnableTask = selectRunnableTask(snapshot);
 
     if (runnableTask === undefined) {
+      snapshot = await blockJobOnNoRunnableTask(snapshot);
       break;
     }
 
@@ -83,15 +93,15 @@ export async function resumeJob(
     }
   }
 
-  if (runRecords.length === 0) {
+  if (runRecords.length === 0 && snapshot.job.status !== "blocked") {
     throw new Error(`Job ${snapshot.job.id} has no runnable task.`);
   }
 
   return {
     snapshot,
-    runRecord: runRecords.at(-1)!,
+    runRecord: runRecords.at(-1) ?? null,
     runRecords,
-    runDirectoryPath: lastRunDirectoryPath,
+    runDirectoryPath: lastRunDirectoryPath || null,
     iterations: runRecords.length
   };
 }
@@ -103,7 +113,8 @@ async function executeIteration(
   const paths = getJobPaths(snapshot.job.id, snapshot.job.stateDirectoryPath);
   const runId = getNextRunId(snapshot.runtime.lastRunId);
   const runPaths = getRunPaths(paths.runsDirectoryPath, runId);
-  const promptText = buildExecutionPrompt({
+  const adapter = getAdapterDefinition(snapshot.job.requestedAgent);
+  const promptText = adapter.preparePrompt({
     title: snapshot.job.title,
     taskId: runnableTask.id,
     taskTitle: runnableTask.title,
@@ -145,32 +156,17 @@ async function executeIteration(
 
     await persistRunLogs(buildRunContext(runningSnapshot, runPaths, promptText), adapterResult);
 
-    if (adapterResult.exitCode !== 0) {
-      throw createAdapterFailure(
-        "execution_failed",
-        "Agent process exited with a non-zero status.",
-        {
-          stdout: adapterResult.stdout,
-          stderr: adapterResult.stderr,
-          exitCode: adapterResult.exitCode,
-          signal: adapterResult.signal
-        }
-      );
-    }
-
     const agentResult = parseAgentResult(adapterResult.rawResultText);
 
     if (agentResult.task_id !== runnableTask.id) {
-      throw createAdapterFailure(
-        "malformed_result",
-        `Agent returned task_id ${agentResult.task_id}, expected ${runnableTask.id}.`,
-        {
-          stdout: adapterResult.stdout,
-          stderr: adapterResult.stderr,
-          exitCode: adapterResult.exitCode,
-          signal: adapterResult.signal
-        }
-      );
+      throw {
+        code: "malformed_result",
+        message: `Agent returned task_id ${agentResult.task_id}, expected ${runnableTask.id}.`,
+        stdout: adapterResult.stdout,
+        stderr: adapterResult.stderr,
+        exitCode: adapterResult.exitCode,
+        signal: adapterResult.signal
+      } satisfies AdapterExecutionFailure;
     }
 
     const validationRecord = await runValidation({
@@ -183,17 +179,7 @@ async function executeIteration(
       validationIndex: toRunNumber(runId)
     });
 
-    const normalizedResult =
-      validationRecord.status === "failed"
-        ? {
-            ...agentResult,
-            status: "failed" as const,
-            blockers: [
-              ...agentResult.blockers,
-              validationRecord.summary
-            ]
-          }
-        : agentResult;
+    const normalizedResult = applyValidationOutcome(agentResult, validationRecord);
 
     const runRecord = buildRunRecord({
       runId,
@@ -226,7 +212,8 @@ async function executeIteration(
       updateFinalSummaryReport({
         finalSummaryPath: paths.finalSummaryPath,
         title: runningSnapshot.job.title,
-        runRecord
+        jobStatus: nextSnapshot.job.status,
+        runsDirectoryPath: paths.runsDirectoryPath
       })
     ]);
 
@@ -281,7 +268,8 @@ async function executeIteration(
     await updateFinalSummaryReport({
       finalSummaryPath: paths.finalSummaryPath,
       title: runningSnapshot.job.title,
-      runRecord
+      jobStatus: nextSnapshot.job.status,
+      runsDirectoryPath: paths.runsDirectoryPath
     });
 
     return {
@@ -337,7 +325,7 @@ function applyTaskOutcome(options: {
     targetTask.status = "completed";
   } else if (result.status === "partial") {
     if (result.follow_up_tasks.length > 0) {
-      targetTask.status = "partial";
+      targetTask.status = "completed";
       appendFollowUpTasks({
         dependencies: nextDependencies,
         nextTasks,
@@ -378,8 +366,8 @@ function applyTaskOutcome(options: {
     });
   }
 
-  const remainingTaskCount = nextTasks.filter((entry) => entry.status === "pending").length;
-  const phaseGateStatus = derivePhaseGateStatus(snapshot, nextTasks);
+  const phaseGateStatus = derivePhaseGateStatus(snapshot.tasks.phases, nextTasks);
+  const remainingTaskCount = countRemainingTasks(nextTasks);
   const blockedReason =
     nextTasks.some((entry) => entry.status === "blocked")
       ? result.blockers.join("; ") || runRecord.summary
@@ -400,10 +388,10 @@ function applyTaskOutcome(options: {
         : remainingTaskCount === 0 && allRequiredWorkCompleted && allPhaseGatesPassed
           ? "completed"
           : "running";
-  const currentTaskId = nextPendingTaskId(nextTasks, nextDependencies);
+  const currentTaskId = nextPendingTaskId(snapshot.tasks.phases, nextTasks, nextDependencies);
   const currentPhaseId =
     currentTaskId === null
-      ? snapshot.runtime.currentPhaseId
+      ? snapshot.tasks.phases.find((phase) => phaseGateStatus[phase.id] !== "passed")?.id ?? null
       : nextTasks.find((entry) => entry.id === currentTaskId)?.phaseId ?? snapshot.runtime.currentPhaseId;
 
   return {
@@ -456,20 +444,6 @@ function appendFollowUpTasks(options: {
     options.dependencies[taskId] = [options.sourceTask.id];
     options.nextRetryCounts[taskId] = 0;
     options.nextEvidenceLinks[taskId] = [];
-  });
-}
-
-function selectRunnableTask(snapshot: JobSnapshot): TaskRecord | undefined {
-  return snapshot.tasks.tasks.find((task) => {
-    if (task.status !== "pending") {
-      return false;
-    }
-
-    const dependencies = snapshot.tasks.dependencies[task.id] ?? [];
-    return dependencies.every((dependencyId) => {
-      const dependency = snapshot.tasks.tasks.find((entry) => entry.id === dependencyId);
-      return dependency !== undefined && isTerminalTaskStatus(dependency.status);
-    });
   });
 }
 
@@ -529,55 +503,12 @@ function buildRunningRunRecord(options: {
   };
 }
 
-function derivePhaseGateStatus(
-  snapshot: JobSnapshot,
-  tasks: TaskRecord[]
-): JobSnapshot["tasks"]["phaseGateStatus"] {
-  return Object.fromEntries(
-    snapshot.tasks.phases.map((phase) => {
-      const phaseTasks = tasks.filter((task) => task.phaseId === phase.id);
-
-      if (phaseTasks.some((task) => ["failed", "blocked"].includes(task.status))) {
-        return [phase.id, "failed"];
-      }
-
-      if (
-        phaseTasks.length > 0 &&
-        phaseTasks.every((task) => task.status === "completed")
-      ) {
-        return [phase.id, "passed"];
-      }
-
-      return [phase.id, "pending"];
-    })
-  );
-}
-
-function nextPendingTaskId(
-  tasks: TaskRecord[],
-  dependencies: Record<string, string[]>
-): string | null {
-  return (
-    tasks.find((task) => {
-      if (task.status !== "pending") {
-        return false;
-      }
-
-      const taskDependencies = dependencies[task.id] ?? [];
-      return taskDependencies.every((dependencyId) => {
-        const dependency = tasks.find((entry) => entry.id === dependencyId);
-        return dependency !== undefined && isTerminalTaskStatus(dependency.status);
-      });
-    })?.id ?? null
-  );
-}
-
 function isTerminalTaskStatus(status: TaskStatus): boolean {
-  return ["completed", "partial", "blocked", "failed", "cancelled"].includes(status);
+  return isTaskTerminal(status);
 }
 
 function isTerminalJobStatus(status: JobSnapshot["job"]["status"]): boolean {
-  return ["completed", "failed", "cancelled"].includes(status);
+  return isJobTerminal(status);
 }
 
 function buildRunningSnapshot(
@@ -608,7 +539,7 @@ function buildRunningSnapshot(
       ...snapshot.runtime,
       currentPhaseId: task.phaseId,
       currentTaskId: task.id,
-      remainingTaskCount: nextTasks.filter((entry) => entry.status === "pending").length,
+      remainingTaskCount: countRemainingTasks(nextTasks),
       lastRunId: runId,
       nextAction: "resume",
       blockedReason: null,
@@ -645,4 +576,33 @@ function normalizeExecutionFailure(error: unknown): AdapterExecutionFailure {
     exitCode: null,
     signal: null
   };
+}
+
+async function blockJobOnNoRunnableTask(snapshot: JobSnapshot): Promise<JobSnapshot> {
+  const reason = buildNoRunnableTaskReason(snapshot);
+  const paths = getJobPaths(snapshot.job.id, snapshot.job.stateDirectoryPath);
+  const nextSnapshot: JobSnapshot = {
+    job: {
+      ...snapshot.job,
+      status: "blocked",
+      updatedAt: new Date().toISOString()
+    },
+    tasks: {
+      ...snapshot.tasks,
+      phaseGateStatus: derivePhaseGateStatus(snapshot.tasks.phases, snapshot.tasks.tasks)
+    },
+    runtime: {
+      ...buildBlockedRuntime(snapshot, reason),
+      lastValidationStatus: snapshot.runtime.lastValidationStatus
+    }
+  };
+
+  await saveJobSnapshot(nextSnapshot);
+  await updateFinalSummaryReport({
+    finalSummaryPath: paths.finalSummaryPath,
+    title: snapshot.job.title,
+    jobStatus: nextSnapshot.job.status,
+    runsDirectoryPath: paths.runsDirectoryPath
+  });
+  return nextSnapshot;
 }

@@ -1,3 +1,5 @@
+import type { InputDocumentRecord } from "../job/types.js";
+
 export type AdapterErrorCode =
   | "timeout"
   | "cli_missing"
@@ -19,6 +21,18 @@ export interface AgentResult {
   blockers: string[];
 }
 
+export interface AdapterPromptContext {
+  title: string;
+  taskId: string;
+  taskTitle: string;
+  taskDescription: string;
+  workspacePath: string;
+  specPath: string;
+  planPath: string;
+  inputManifestPath: string;
+  inputDocuments: InputDocumentRecord[];
+}
+
 export interface AdapterRunContext {
   agent: "codex" | "claude-code" | "custom-command";
   workspacePath: string;
@@ -26,6 +40,12 @@ export interface AdapterRunContext {
   promptText: string;
   outputPath: string;
   runDirectoryPath: string;
+}
+
+export interface AdapterDefinition {
+  preparePrompt: (context: AdapterPromptContext) => string;
+  execute: (runContext: AdapterRunContext) => Promise<AdapterExecutionResult>;
+  normalizeError: (error: unknown) => AdapterExecutionFailure;
 }
 
 export interface AdapterExecutionResult {

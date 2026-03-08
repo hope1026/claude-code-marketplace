@@ -9,6 +9,11 @@ export async function runStatusCommand(argv: string[]): Promise<number> {
   const stateDirectoryPath = getSingleFlag(parsedArgs, "--state-dir");
   const jsonMode = hasFlag(parsedArgs, "--json");
 
+  if (workspacePath === undefined && stateDirectoryPath === undefined) {
+    printError("Either --workspace or --state-dir is required.");
+    return 1;
+  }
+
   try {
     const { snapshot, runIds } = await getJobOverview({
       jobId,
@@ -28,6 +33,7 @@ export async function runStatusCommand(argv: string[]): Promise<number> {
         current_task_id: snapshot.runtime.currentTaskId,
         remaining_task_count: snapshot.runtime.remainingTaskCount,
         next_action: snapshot.runtime.nextAction,
+        blocked_reason: snapshot.runtime.blockedReason,
         last_validation_status: snapshot.runtime.lastValidationStatus,
         max_retries_per_task: snapshot.job.retryPolicy.maxRetriesPerTask,
         retry_counts: snapshot.tasks.retryCounts,
@@ -47,6 +53,7 @@ export async function runStatusCommand(argv: string[]): Promise<number> {
     printLine(`Current task: ${snapshot.runtime.currentTaskId ?? "-"}`);
     printLine(`Remaining tasks: ${String(snapshot.runtime.remainingTaskCount)}`);
     printLine(`Next action: ${snapshot.runtime.nextAction}`);
+    printLine(`Blocked reason: ${snapshot.runtime.blockedReason ?? "-"}`);
     printLine(`Validation: ${snapshot.runtime.lastValidationStatus}`);
     printLine(`Last run: ${snapshot.runtime.lastRunId ?? "-"}`);
     printLine(`Max retries per task: ${String(snapshot.job.retryPolicy.maxRetriesPerTask)}`);
