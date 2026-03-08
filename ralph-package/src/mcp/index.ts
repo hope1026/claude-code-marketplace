@@ -195,6 +195,7 @@ async function callTool(params: Record<string, unknown>): Promise<{
       break;
     }
     case "get_status": {
+      requireOneOf(args, "workspace_path", "state_dir");
       const result = await getJobOverview({
         jobId: asOptionalString(args.job_id),
         workspacePath: asOptionalString(args.workspace_path),
@@ -209,6 +210,7 @@ async function callTool(params: Record<string, unknown>): Promise<{
       break;
     }
     case "get_result": {
+      requireOneOf(args, "workspace_path", "state_dir");
       const result = await loadJobDetails({
         jobId: asOptionalString(args.job_id),
         workspacePath: asOptionalString(args.workspace_path),
@@ -218,6 +220,7 @@ async function callTool(params: Record<string, unknown>): Promise<{
       break;
     }
     case "resume_job": {
+      requireOneOf(args, "workspace_path", "state_dir");
       const result = await resumeJob({
         jobId: asOptionalString(args.job_id),
         workspacePath: asOptionalString(args.workspace_path),
@@ -228,6 +231,7 @@ async function callTool(params: Record<string, unknown>): Promise<{
       break;
     }
     case "cancel_job": {
+      requireOneOf(args, "workspace_path", "state_dir");
       const result = await cancelJob({
         jobId: asOptionalString(args.job_id),
         workspacePath: asOptionalString(args.workspace_path),
@@ -286,6 +290,19 @@ function asOptionalNumber(value: unknown): number | undefined {
 
 function asStringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === "string") : [];
+}
+
+function requireOneOf(
+  args: Record<string, unknown>,
+  ...fields: string[]
+): void {
+  const hasAny = fields.some(
+    (field) => typeof args[field] === "string" && (args[field] as string).trim().length > 0
+  );
+
+  if (!hasAny) {
+    throw new Error(`At least one of ${fields.join(", ")} is required.`);
+  }
 }
 
 function requireAgent(value: unknown): "codex" | "claude-code" | "custom-command" {

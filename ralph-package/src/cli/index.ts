@@ -1,4 +1,3 @@
-import { commandCatalog } from "./catalog/index.js";
 import { runCancelCommand } from "./cancel/index.js";
 import { runResultCommand } from "./result/index.js";
 import { runResumeCommand } from "./resume/index.js";
@@ -12,18 +11,37 @@ function printHelp(): void {
     `${packageName} v${version}`,
     "",
     "Usage:",
-    "  ralph <command>",
+    "  ralph <command> [options]",
     "",
     "Commands:",
-    "  start",
-    "  status",
-    "  resume",
-    "  cancel",
-    "  result",
-    "  mcp",
+    "  start    Create a new job",
+    "  status   Show current job status",
+    "  resume   Resume job execution",
+    "  cancel   Cancel a running job",
+    "  result   Show job result and reports",
+    "  mcp      Start MCP server (stdin/stdout)",
     "",
-    "This scaffold wires the agreed package structure and contracts.",
-    `Available commands: ${commandCatalog.join(", ")}`
+    "Common options:",
+    "  --workspace <path>   Working directory for agent execution",
+    "  --state-dir <path>   State storage root override",
+    "  --json               Output in JSON format",
+    "",
+    "Start options:",
+    "  --title <text>       Job title (required)",
+    "  --agent <name>       Agent adapter: codex, claude-code, custom-command (required)",
+    "  --input <path>       Input file/image/directory reference (repeatable)",
+    "  --validate-cmd <cmd> Validation command (repeatable)",
+    "  --max-retries <n>    Max retries per task",
+    "",
+    "Resume options:",
+    "  --max-iterations <n> Max iterations per resume call",
+    "",
+    "Status/Cancel/Result options:",
+    "  --job <id>           Job ID (defaults to current job)",
+    "",
+    "Flags:",
+    "  --help, -h           Show this help",
+    "  --version, -v        Show version"
   ];
 
   process.stdout.write(`${helpText.join("\n")}\n`);

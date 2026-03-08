@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "defaultMode": "bypassPermissions",
+    "allow": [
+      "Bash(true:*)",
+      "Bash(cd:*)",
+      "mcp__weppy-roblox-mcp__system_info",
+      "mcp__weppy-roblox-mcp__manage_terrain",
+      "mcp__weppy-roblox-mcp__execute_luau",
+      "Bash(test:*)",
+      "Bash(curl:*)",
+      "Bash(node:*)",
+      "Bash(cd \"E:/Work/roblox-mcp-private/license-server\" && npm test 2>&1)",
+      "mcp__weppy-roblox-mcp__manage_camera",
+      "Bash(code --install-extension ryuta46.multi-command)",
+      "Bash(python3:*)",
+      "Bash(do echo:*)"
+    ]
+  }
+}

@@ -13,8 +13,7 @@ import type {
 import { loadJob, saveJobSnapshot } from "../job/index.js";
 import type {
   JobSnapshot,
-  TaskRecord,
-  TaskStatus
+  TaskRecord
 } from "../job/types.js";
 import {
   buildBlockedRuntime,
@@ -501,10 +500,6 @@ function buildRunningRunRecord(options: {
     exitCode: null,
     signal: null
   };
-}
-
-function isTerminalTaskStatus(status: TaskStatus): boolean {
-  return isTaskTerminal(status);
 }
 
 function isTerminalJobStatus(status: JobSnapshot["job"]["status"]): boolean {
