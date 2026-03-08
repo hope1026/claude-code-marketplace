@@ -29,8 +29,9 @@ function printHelp(): void {
   process.stdout.write(`${helpText.join("\n")}\n`);
 }
 
-function main(argv: string[]): number {
+async function main(argv: string[]): Promise<number> {
   const [command] = argv;
+  const commandArgs = argv.slice(1);
 
   switch (command) {
     case undefined:
@@ -45,15 +46,15 @@ function main(argv: string[]): number {
       process.stdout.write(`${version}\n`);
       return 0;
     case "start":
-      return runStartCommand();
+      return runStartCommand(commandArgs);
     case "status":
-      return runStatusCommand();
+      return runStatusCommand(commandArgs);
     case "resume":
-      return runResumeCommand();
+      return runResumeCommand(commandArgs);
     case "cancel":
-      return runCancelCommand();
+      return runCancelCommand(commandArgs);
     case "result":
-      return runResultCommand();
+      return runResultCommand(commandArgs);
     case "mcp":
       return startMcpServer();
     default:
@@ -63,4 +64,6 @@ function main(argv: string[]): number {
   }
 }
 
-process.exitCode = main(process.argv.slice(2));
+void main(process.argv.slice(2)).then((exitCode) => {
+  process.exitCode = exitCode;
+});

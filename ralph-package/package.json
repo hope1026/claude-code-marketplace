@@ -16,6 +16,7 @@
   "scripts": {
     "build": "node build.mjs",
     "check": "tsc --noEmit",
+    "test": "npm run build && node --test test/**/*.test.mjs",
     "prepublishOnly": "npm run check && npm run build"
   },
   "engines": {
