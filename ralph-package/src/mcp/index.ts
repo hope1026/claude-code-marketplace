@@ -183,7 +183,7 @@ async function callTool(params: Record<string, unknown>): Promise<{
         stateDirectoryPath: asOptionalString(args.state_dir),
         inputDocuments: asStringArray(args.input_documents),
         validateCommands: asStringArray(args.validation_commands),
-        maxRetriesPerTask: asOptionalNumber(args.max_retries_per_task)
+        maxRetriesPerTask: requireOptionalInteger(args.max_retries_per_task, "max_retries_per_task", 0)
       });
       payload = {
         job_id: result.snapshot.job.id,
@@ -225,7 +225,7 @@ async function callTool(params: Record<string, unknown>): Promise<{
         jobId: asOptionalString(args.job_id),
         workspacePath: asOptionalString(args.workspace_path),
         stateDirectoryPath: asOptionalString(args.state_dir),
-        maxIterations: asOptionalNumber(args.max_iterations)
+        maxIterations: requireOptionalInteger(args.max_iterations, "max_iterations", 1)
       });
       payload = result;
       break;
@@ -286,6 +286,24 @@ function asOptionalString(value: unknown): string | undefined {
 
 function asOptionalNumber(value: unknown): number | undefined {
   return typeof value === "number" ? value : undefined;
+}
+
+function requireOptionalInteger(
+  value: unknown,
+  fieldName: string,
+  minimum: number
+): number | undefined {
+  const parsed = asOptionalNumber(value);
+
+  if (parsed === undefined) {
+    return undefined;
+  }
+
+  if (!Number.isInteger(parsed) || parsed < minimum) {
+    throw new Error(`\`${fieldName}\` must be an integer greater than or equal to ${String(minimum)}.`);
+  }
+
+  return parsed;
 }
 
 function asStringArray(value: unknown): string[] {

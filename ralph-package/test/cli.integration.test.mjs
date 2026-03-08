@@ -825,6 +825,51 @@ test("mcp server responds to initialize and tools/list", async () => {
   assert.match(stdout, /"name":"cancel_job"/);
 });
 
+test("mcp validates numeric tool arguments against the contract", async () => {
+  const workspacePath = await mkdtemp(join(tmpdir(), "ralph-mcp-validate-"));
+  const child = execFile("node", [cliPath, "mcp"], {
+    cwd: repoRoot,
+    env: process.env,
+    encoding: "utf8",
+    maxBuffer: 1024 * 1024
+  });
+
+  let stdout = "";
+  child.stdout?.on("data", (chunk) => {
+    stdout += chunk.toString();
+  });
+
+  child.stdin?.write(
+    frame({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "tools/call",
+      params: {
+        name: "start_job",
+        arguments: {
+          title: "Invalid MCP Numeric",
+          agent: "custom-command",
+          workspace_path: workspacePath,
+          max_retries_per_task: -1
+        }
+      }
+    })
+  );
+  child.stdin?.end();
+
+  try {
+    await new Promise((resolve, reject) => {
+      child.on("close", resolve);
+      child.on("error", reject);
+    });
+
+    assert.match(stdout, /max_retries_per_task/);
+    assert.match(stdout, /greater than or equal to 0/);
+  } finally {
+    await rm(workspacePath, { recursive: true, force: true });
+  }
+});
+
 async function runCli(args, options = {}) {
   const { stdout } = await execFileAsync("node", [cliPath, ...args], {
     cwd: repoRoot,

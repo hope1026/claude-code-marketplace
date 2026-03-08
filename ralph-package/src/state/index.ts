@@ -172,7 +172,7 @@ export function getRunPaths(
     runRecordPath: join(runDirectoryPath, "run-record.json"),
     stdoutLogPath: join(runDirectoryPath, "stdout.log"),
     stderrLogPath: join(runDirectoryPath, "stderr.log"),
-    outputPath: join(runDirectoryPath, "agent-output.json")
+    outputPath: resultPath
   };
 }
 
