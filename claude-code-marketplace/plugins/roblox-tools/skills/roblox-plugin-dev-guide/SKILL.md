@@ -24,8 +24,8 @@ description: Guide for implementing and extending the Roblox Studio plugin (plug
 - Identify handler name/action, expected output, and tier impact.
 2. Read code before editing.
 - `tools.yaml` — SSOT for all tool/action definitions
-- `plugin/src/CommandHandlers/init.luau` — HANDLER_REGISTRY (핸들러 등록)
-- `plugin/src/Generated/ProActions.generated.luau` — codegen 자동 생성 Pro action 목록
+- `plugin/src/CommandHandlers/init.luau` — HANDLER_REGISTRY (handler registry)
+- `plugin/src/Generated/ProActions.generated.luau` — auto-generated list of Pro actions
 - `plugin/src/CommandHandlers/{Core,Pro}/*.luau`
 - `plugin/src/Utils/TypeConverter.luau`
 - `plugin/src/Utils/PathResolver.luau`
@@ -46,12 +46,17 @@ description: Guide for implementing and extending the Roblox Studio plugin (plug
 - Summarize changed files, behavior impact, validation, and residual risks.
 
 ## Required Cross-Repo Updates (Handler/Action Change)
-- `tools.yaml`: SSOT에 action 추가 (도구, action명, tier, route, category 등)
-- `npm run codegen` 실행: dispatch-map, tier-map, route-map, category-map (TypeScript) + `plugin/src/Generated/ProActions.generated.luau` 자동 생성
+- `tool-codegen/tools.yaml`: add the action to the SSOT manifest (tool, action name, tier, route, handler, paramAliases, etc.)
+- `cd mcp-server && npm run codegen`: regenerate these four generated files
+  - `mcp-server/src/generated/dispatch-map.generated.ts`
+  - `mcp-server/src/generated/tier-map.generated.ts`
+  - `mcp-server/src/generated/route-map.generated.ts`
+  - `plugin/src/Generated/ProActions.generated.luau`
 - `plugin/src/CommandHandlers/{Core,Pro}/*.luau`: implement handler
-- `plugin/src/CommandHandlers/init.luau`: HANDLER_REGISTRY에 핸들러 등록 (PRO_ACTIONS는 Generated에서 자동 import)
-- `mcp-server/src/tools/consolidated/<tool>.ts`: add action and parameter schema (필요 시)
-- `CLAUDE.md`: update tool count/category table when total changes
+- `plugin/src/CommandHandlers/init.luau`: register the handler in `HANDLER_REGISTRY` (`PRO_ACTIONS` is imported from Generated automatically)
+- `mcp-server/src/tools/consolidated/<tool>.ts`: add action and parameter schema when needed
+- `cd mcp-server && npm run codegen:check` or `./tool-codegen/verify-sync.sh`: verify generated-file drift
+- `CLAUDE.md`: update if the tool surface or codegen workflow description changes
 
 ## API and Safety Rules
 - Consult official Roblox API docs for new API usage:
@@ -112,6 +117,7 @@ description: Guide for implementing and extending the Roblox Studio plugin (plug
 - [ ] Handler implemented with consistent success/error shape
 - [ ] Handler registered in HANDLER_REGISTRY (PRO_ACTIONS auto-generated via codegen)
 - [ ] `tools.yaml` updated and `npm run codegen` run when action added/changed
+- [ ] Run `npm run codegen:check` or `./tool-codegen/verify-sync.sh` when drift verification is needed
 - [ ] Docs/tool-count sync completed when required
 - [ ] User-visible UI text is fully localized via `plugin/src/Localization/`
 - [ ] Disabled interaction input returns guidance or explicit disabled reason

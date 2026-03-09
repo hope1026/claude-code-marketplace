@@ -16,18 +16,20 @@ description: Guide for implementing and extending the Roblox MCP server (mcp-ser
 - Documentation-only sync work with no source changes (use `roblox-docs-sync-guide`).
 
 ## Working Scope
-- Primary: `mcp-server/`, `scripts/codegen/`
-- SSOT: `tools.yaml` (도구/action 정의의 단일 진실 소스)
-- Generated: `mcp-server/src/generated/` (dispatch-map, tier-map, route-map, category-map)
+- Primary: `mcp-server/`, `tool-codegen/`
+- SSOT: `tool-codegen/tools.yaml` (single source of truth for tool/action, handler, tier, route, and `paramAliases`)
+- Generated: `mcp-server/src/generated/` + `plugin/src/Generated/` (dispatch-map, tier-map, route-map, ProActions)
 - Required cross-check when tool surface changes: `plugin/`, `deploy/`, `CLAUDE.md`
 
 ## Execution Workflow
 1. Confirm scope and expected behavior.
 - Identify target tool/action, expected result, and Basic/Pro impact.
 2. Read code before editing.
-- `tools.yaml` — SSOT for all tool/action definitions
+- `tool-codegen/tools.yaml` — SSOT for all tool/action definitions
 - `mcp-server/src/tools/consolidated/*.ts` — tool schemas and definitions
-- `mcp-server/src/generated/` — codegen 자동 생성 파일 (dispatch-map, tier-map, route-map, category-map)
+- `mcp-server/src/generated/` — auto-generated files (dispatch-map, tier-map, route-map)
+- `plugin/src/Generated/ProActions.generated.luau` — auto-generated list of Pro actions
+- `tool-codegen/codegen/generate.ts` — entry point for generating and checking generated files
 - `mcp-server/src/utils/tool-dispatcher.ts` — generated dispatch-map import
 - `mcp-server/src/utils/tier-checker.ts` — generated tier-map import
 - `mcp-server/src/http-bridge.ts` — HTTP bridge (Express)
@@ -46,13 +48,14 @@ description: Guide for implementing and extending the Roblox MCP server (mcp-ser
 - Summarize changed files, behavior impact, validation, and residual risks.
 
 ## Required Cross-Repo Updates (Tool/Action Change)
-- `tools.yaml`: SSOT에 action 추가 (도구, action명, tier, route, category 등)
-- `npm run codegen` 실행: dispatch-map, tier-map, route-map, category-map (TypeScript) + ProActions.generated.luau 자동 생성
-- `mcp-server/src/tools/consolidated/<tool>.ts`: add action and parameter schema (필요 시)
+- `tool-codegen/tools.yaml`: add the action to the SSOT manifest (tool, action name, tier, route, handler, paramAliases, etc.)
+- `cd mcp-server && npm run codegen`: regenerate `dispatch-map`, `tier-map`, `route-map`, and `ProActions.generated.luau`
+- `mcp-server/src/tools/consolidated/<tool>.ts`: add action and parameter schema when needed
 - `plugin/src/CommandHandlers/{Core,Pro}/*.luau`: implement handler
-- `plugin/src/CommandHandlers/init.luau`: HANDLER_REGISTRY에 핸들러 등록
+- `plugin/src/CommandHandlers/init.luau`: register the handler in `HANDLER_REGISTRY`
+- `cd mcp-server && npm run codegen:check` or `./tool-codegen/verify-sync.sh`: verify generated-file drift
 - `deploy/publish/hope1026-roblox-mcp/plugins/weppy-roblox-mcp/skills/roblox-game-dev/references/mcp-tools.md`: sync tool reference
-- `CLAUDE.md`: update tool count/category table when total changes
+- `CLAUDE.md`: update if tool totals or the codegen workflow description changes
 
 ## Architecture Rules
 ### Command Flow
@@ -117,6 +120,7 @@ description: Guide for implementing and extending the Roblox MCP server (mcp-ser
 - [ ] Server behavior implemented and type-safe
 - [ ] `tools.yaml` updated and `npm run codegen` run
 - [ ] Dispatch and tier mappings generated
+- [ ] Run `npm run codegen:check` or `./tool-codegen/verify-sync.sh` when drift verification is needed
 - [ ] Plugin side updated when required
 - [ ] Docs/tool-count sync completed when required
 - [ ] `npm run build` passed
