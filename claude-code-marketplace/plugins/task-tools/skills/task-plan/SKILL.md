@@ -90,7 +90,42 @@ Plan format:
 
 ## Risks & Mitigations
 - Risk: {description} -> Mitigation: {approach}
+
+## Visual Summary
+
+> Consolidate all key visuals here so the entire plan can be grasped at a glance.
+> Even if diagrams already appear in earlier sections, aggregate them here for quick reference.
+
+### Process Flow
+{End-to-end execution flow as an ASCII sequence diagram}
+
+### Before / After
+{Side-by-side comparison of the structure before and after the change}
+
+### File Impact Map
+{New / Modified / Deleted files shown as a tree structure}
+
+### Phase Dependencies
+{Phase ordering and parallelism as an ASCII dependency graph}
 ```
+
+#### Visual Summary Guidelines
+
+The `## Visual Summary` section is **mandatory** in every plan. Include at least 2 of the following subsections, chosen based on relevance:
+
+| Subsection | When to Include | Format |
+|------------|----------------|--------|
+| Process Flow | Always (default) | ASCII sequence / flowchart showing the end-to-end execution path |
+| Before / After | When architecture or structure changes | Side-by-side ASCII diagrams comparing current vs. target state |
+| File Impact Map | When 5+ files are affected | Tree structure marking `[NEW]`, `[MOD]`, `[DEL]` per file |
+| Phase Dependencies | When 3+ phases exist | ASCII DAG showing sequential vs. parallel phases |
+| Data Flow | When multiple systems interact | ASCII diagram showing data movement between components |
+
+Rules:
+- Use only ASCII art (no Mermaid, no images) for maximum portability
+- Keep each diagram under 30 lines
+- Label all arrows and nodes clearly
+- If a subsection is not applicable, omit it (do not include empty placeholders)
 
 ### Phase 3: User Confirmation
 

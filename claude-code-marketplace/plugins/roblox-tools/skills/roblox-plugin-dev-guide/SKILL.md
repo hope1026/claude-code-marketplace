@@ -23,7 +23,9 @@ description: Guide for implementing and extending the Roblox Studio plugin (plug
 1. Confirm scope and affected command contract.
 - Identify handler name/action, expected output, and tier impact.
 2. Read code before editing.
-- `plugin/src/CommandHandlers/init.luau`
+- `tools.yaml` — SSOT for all tool/action definitions
+- `plugin/src/CommandHandlers/init.luau` — HANDLER_REGISTRY (핸들러 등록)
+- `plugin/src/Generated/ProActions.generated.luau` — codegen 자동 생성 Pro action 목록
 - `plugin/src/CommandHandlers/{Core,Pro}/*.luau`
 - `plugin/src/Utils/TypeConverter.luau`
 - `plugin/src/Utils/PathResolver.luau`
@@ -44,11 +46,11 @@ description: Guide for implementing and extending the Roblox Studio plugin (plug
 - Summarize changed files, behavior impact, validation, and residual risks.
 
 ## Required Cross-Repo Updates (Handler/Action Change)
+- `tools.yaml`: SSOT에 action 추가 (도구, action명, tier, route, category 등)
+- `npm run codegen` 실행: dispatch-map, tier-map, route-map, category-map (TypeScript) + `plugin/src/Generated/ProActions.generated.luau` 자동 생성
 - `plugin/src/CommandHandlers/{Core,Pro}/*.luau`: implement handler
-- `plugin/src/CommandHandlers/init.luau`: register handler and `PRO_ACTIONS`
-- `mcp-server/src/tools/consolidated/<tool>.ts`: add action and parameter schema
-- `mcp-server/src/utils/tool-dispatcher.ts`: add dispatch mapping entry
-- `mcp-server/src/utils/tier-checker.ts`: add to Pro action gate if Pro
+- `plugin/src/CommandHandlers/init.luau`: HANDLER_REGISTRY에 핸들러 등록 (PRO_ACTIONS는 Generated에서 자동 import)
+- `mcp-server/src/tools/consolidated/<tool>.ts`: add action and parameter schema (필요 시)
 - `CLAUDE.md`: update tool count/category table when total changes
 
 ## API and Safety Rules
@@ -108,8 +110,8 @@ description: Guide for implementing and extending the Roblox Studio plugin (plug
 
 ## Validation Checklist
 - [ ] Handler implemented with consistent success/error shape
-- [ ] Handler registry and `PRO_ACTIONS` updated
-- [ ] MCP dispatcher/tier mappings updated when needed
+- [ ] Handler registered in HANDLER_REGISTRY (PRO_ACTIONS auto-generated via codegen)
+- [ ] `tools.yaml` updated and `npm run codegen` run when action added/changed
 - [ ] Docs/tool-count sync completed when required
 - [ ] User-visible UI text is fully localized via `plugin/src/Localization/`
 - [ ] Disabled interaction input returns guidance or explicit disabled reason

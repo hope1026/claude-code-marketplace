@@ -16,16 +16,20 @@ description: Guide for implementing and extending the Roblox MCP server (mcp-ser
 - Documentation-only sync work with no source changes (use `roblox-docs-sync-guide`).
 
 ## Working Scope
-- Primary: `mcp-server/`
+- Primary: `mcp-server/`, `scripts/codegen/`
+- SSOT: `tools.yaml` (도구/action 정의의 단일 진실 소스)
+- Generated: `mcp-server/src/generated/` (dispatch-map, tier-map, route-map, category-map)
 - Required cross-check when tool surface changes: `plugin/`, `deploy/`, `CLAUDE.md`
 
 ## Execution Workflow
 1. Confirm scope and expected behavior.
 - Identify target tool/action, expected result, and Basic/Pro impact.
 2. Read code before editing.
+- `tools.yaml` — SSOT for all tool/action definitions
 - `mcp-server/src/tools/consolidated/*.ts` — tool schemas and definitions
-- `mcp-server/src/utils/tool-dispatcher.ts` — action→plugin command mapping
-- `mcp-server/src/utils/tier-checker.ts` — Pro/Basic tier gate
+- `mcp-server/src/generated/` — codegen 자동 생성 파일 (dispatch-map, tier-map, route-map, category-map)
+- `mcp-server/src/utils/tool-dispatcher.ts` — generated dispatch-map import
+- `mcp-server/src/utils/tier-checker.ts` — generated tier-map import
 - `mcp-server/src/http-bridge.ts` — HTTP bridge (Express)
 - `mcp-server/src/sync/` — file sync (LRU + watcher)
 - `mcp-server/src/server.ts` — MCP stdio server
@@ -42,11 +46,11 @@ description: Guide for implementing and extending the Roblox MCP server (mcp-ser
 - Summarize changed files, behavior impact, validation, and residual risks.
 
 ## Required Cross-Repo Updates (Tool/Action Change)
-- `mcp-server/src/tools/consolidated/<tool>.ts`: add action and parameter schema
-- `mcp-server/src/utils/tool-dispatcher.ts`: add dispatch mapping entry
-- `mcp-server/src/utils/tier-checker.ts`: add to Pro action gate if Pro
+- `tools.yaml`: SSOT에 action 추가 (도구, action명, tier, route, category 등)
+- `npm run codegen` 실행: dispatch-map, tier-map, route-map, category-map (TypeScript) + ProActions.generated.luau 자동 생성
+- `mcp-server/src/tools/consolidated/<tool>.ts`: add action and parameter schema (필요 시)
 - `plugin/src/CommandHandlers/{Core,Pro}/*.luau`: implement handler
-- `plugin/src/CommandHandlers/init.luau`: register handler and `PRO_ACTIONS`
+- `plugin/src/CommandHandlers/init.luau`: HANDLER_REGISTRY에 핸들러 등록
 - `deploy/publish/hope1026-roblox-mcp/plugins/weppy-roblox-mcp/skills/roblox-game-dev/references/mcp-tools.md`: sync tool reference
 - `CLAUDE.md`: update tool count/category table when total changes
 
@@ -111,7 +115,8 @@ description: Guide for implementing and extending the Roblox MCP server (mcp-ser
 
 ## Validation Checklist
 - [ ] Server behavior implemented and type-safe
-- [ ] Dispatch and tier mappings updated
+- [ ] `tools.yaml` updated and `npm run codegen` run
+- [ ] Dispatch and tier mappings generated
 - [ ] Plugin side updated when required
 - [ ] Docs/tool-count sync completed when required
 - [ ] `npm run build` passed

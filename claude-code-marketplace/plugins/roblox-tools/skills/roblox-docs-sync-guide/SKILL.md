@@ -24,13 +24,23 @@ description: Guide for keeping Roblox MCP documentation in sync with code change
 - `id`: `deploy/publish/hope1026-roblox-mcp/docs/id/README.md`
 
 ## Source of Truth (Read First)
+### SSOT (Single Source of Truth)
+- `tools.yaml` — 모든 도구/action 정의의 단일 진실 소스 (tier, route, category 포함)
+
+### Generated files (codegen 자동 생성, 직접 편집 금지)
+- `mcp-server/src/generated/dispatch-map.generated.ts` — action→plugin command 매핑
+- `mcp-server/src/generated/tier-map.generated.ts` — Pro/Basic tier 게이트
+- `mcp-server/src/generated/route-map.generated.ts` — action→route 매핑
+- `mcp-server/src/generated/category-map.generated.ts` — action→category 매핑
+- `plugin/src/Generated/ProActions.generated.luau` — Pro action 목록
+
 ### MCP server side (TypeScript)
 - `mcp-server/src/tools/consolidated/*.ts` — tool schemas and definitions
-- `mcp-server/src/utils/tool-dispatcher.ts` — action→plugin command mapping
-- `mcp-server/src/utils/tier-checker.ts` — Pro/Basic tier gate
+- `mcp-server/src/utils/tool-dispatcher.ts` — generated dispatch-map import
+- `mcp-server/src/utils/tier-checker.ts` — generated tier-map import
 
 ### Plugin side
-- `plugin/src/CommandHandlers/init.luau` (PRO_ACTIONS is the source of truth for tier)
+- `plugin/src/CommandHandlers/init.luau` (HANDLER_REGISTRY; PRO_ACTIONS는 Generated에서 import)
 
 ## Documentation Targets
 
