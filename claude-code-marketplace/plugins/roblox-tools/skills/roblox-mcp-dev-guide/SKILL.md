@@ -39,6 +39,7 @@ description: Guide for implementing and extending the Roblox MCP server (mcp-ser
 3. Implement with existing patterns.
 - Keep strict type safety and naming conventions.
 - Avoid parameter polymorphism; split into explicit actions/tools when input modes differ.
+- If localization is not required, keep tool/handler/protocol error strings in English by default.
 4. Sync cross-repo contracts when tool/action changes.
 - Update plugin handlers, tier maps, and docs references.
 5. Validate.

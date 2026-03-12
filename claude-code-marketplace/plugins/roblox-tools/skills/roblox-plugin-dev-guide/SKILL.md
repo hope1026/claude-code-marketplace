@@ -36,6 +36,7 @@ description: Guide for implementing and extending the Roblox Studio plugin (plug
 - Avoid polymorphic optional parameters for different input modes; use explicit actions.
 - Use robust `pcall` error handling.
 - Ensure all user-visible UI text is localized through `plugin/src/Localization/` keys.
+- If localization is not required, default handler/protocol strings to English.
 - For disabled interactive UI (button/toggle/menu), handle input attempts by showing the user what action is required; if no action is available, explain why it is disabled.
 4. Sync cross-repo contracts when handler/action changes.
 - Update MCP dispatcher/tier mapping and docs references.
@@ -70,6 +71,7 @@ description: Guide for implementing and extending the Roblox Studio plugin (plug
 - Localize every user-visible string in plugin UI.
 - Never hardcode visible strings in UI components when a localization key can be used.
 - Add new keys to `plugin/src/Localization/en.luau` first, then propagate to other language files.
+- If a string is not part of localized UI, use English as the default language for handler errors and protocol-facing messages.
 - Disabled UI must not fail silently on input.
 - If a disabled control receives click/input, provide user guidance for the required next step.
 - If no next step exists, explicitly explain the disabled reason in UI feedback.
