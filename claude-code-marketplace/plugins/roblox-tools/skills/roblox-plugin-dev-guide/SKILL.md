@@ -29,8 +29,13 @@ description: Guide for implementing and extending the Roblox Studio plugin (plug
 - `plugin/src/CommandHandlers/{Core,Pro}/*.luau`
 - `plugin/src/Utils/TypeConverter.luau`
 - `plugin/src/Utils/PathResolver.luau`
+- `plugin/src/Utils/StringDecoder.luau`
 - `plugin/src/PollingClient.luau`
 - `plugin/src/Localization/`
+- `plugin/scripts/deploy/build-plugin.sh`
+- `plugin/scripts/obfuscate/string-inventory.json`
+- `plugin/scripts/obfuscate/encrypt-strings.mjs`
+- `plugin/scripts/obfuscate/verify-obfuscation.mjs`
 3. Implement with existing Luau patterns.
 - Keep deterministic handler output shape.
 - Avoid polymorphic optional parameters for different input modes; use explicit actions.
@@ -42,9 +47,28 @@ description: Guide for implementing and extending the Roblox Studio plugin (plug
 - Update MCP dispatcher/tier mapping and docs references.
 5. Validate.
 - Run `cd plugin && rojo serve` for integration checks.
-- Build package when needed: `cd plugin && rojo build -o build/WeppyRobloxMCP.rbxm`.
+- Build package when needed: `cd plugin && ./scripts/deploy/build-plugin.sh`
+- Use `cd plugin && ./scripts/deploy/build-plugin.sh --deploy-local` for local Studio deployment.
 6. Report.
 - Summarize changed files, behavior impact, validation, and residual risks.
+
+## Build and Obfuscation Rules
+- Production plugin artifacts must be built through `plugin/scripts/deploy/build-plugin.sh`, not direct `rojo build`.
+- Treat `.build-src/` as the only mutable build workspace. Do not modify tracked source files just to inject build-only values.
+- Production builds run two protection steps before `rojo build`:
+  - `plugin/scripts/obfuscate/encrypt-strings.mjs`
+  - `darklua process` with `plugin/.darklua.prod.json`
+- Sensitive string inventory is managed in `plugin/scripts/obfuscate/string-inventory.json`.
+- Runtime decode support for encrypted strings lives in `plugin/src/Utils/StringDecoder.luau`.
+- Local deploy mode (`--deploy-local`) is debug-friendly:
+  - skip string encryption
+  - run `darklua` when available
+  - continue with a warning when `darklua` is not installed
+- Production builds require `darklua` and `node` to be available.
+- When adding new sensitive endpoints, hostnames, IPs, or external URLs in plugin code:
+  - update `string-inventory.json`
+  - ensure the target file can safely require `StringDecoder`
+  - rerun the production build and obfuscation verification
 
 ## Required Cross-Repo Updates (Handler/Action Change)
 - `tool-codegen/tools.yaml`: add the action to the SSOT manifest (tool, action name, tier, route, handler, paramAliases, etc.)
@@ -114,6 +138,7 @@ description: Guide for implementing and extending the Roblox Studio plugin (plug
 - Use `HttpService:RequestAsync` for polling requests.
 - Use `HttpService:JSONEncode/JSONDecode` for payload handling.
 - Follow existing Luau style and existing plugin patterns.
+- For release-quality plugin builds, do not bypass the obfuscation pipeline with a direct `rojo build`.
 
 ## Validation Checklist
 - [ ] Handler implemented with consistent success/error shape
@@ -124,6 +149,9 @@ description: Guide for implementing and extending the Roblox Studio plugin (plug
 - [ ] User-visible UI text is fully localized via `plugin/src/Localization/`
 - [ ] Disabled interaction input returns guidance or explicit disabled reason
 - [ ] Runtime/build validation performed or explicitly noted if skipped
+- [ ] If new sensitive plugin strings were added, `plugin/scripts/obfuscate/string-inventory.json` was updated
+- [ ] Production build validation used `./scripts/deploy/build-plugin.sh`
+- [ ] Obfuscation verification passed (`verify-obfuscation.mjs` or equivalent build output)
 
 ## Output Contract
 When using this skill, return:

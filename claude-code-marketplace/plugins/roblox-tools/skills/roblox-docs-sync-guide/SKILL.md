@@ -139,6 +139,19 @@ When using this skill, return:
 - Files updated
 - Verification results and any unresolved discrepancies
 
+## Current-State Documentation Rule
+
+Documentation is a snapshot of the currently running system. Do not include the following unless truly necessary:
+
+- **Removed features/paths/files**: Statements like "legacy X path: removed" or "X was deleted" are unnecessary. What does not exist should simply be absent from the docs.
+- **Backward-compatibility explanations**: Remove phrases like "for v1 compatibility..." or "for legacy support...". However, if the runtime currently handles multiple formats (e.g., parsing `v1.` prefix tokens), that is current behavior and should be documented.
+- **Migration guides**: Guides like "when migrating from v1 to v2..." are unnecessary.
+- **Deprecation labels**: Instead of labeling items as "deprecated" or "no longer used", remove them from the documentation entirely.
+
+**Decision test**: "If I delete this sentence, can the current system still be fully understood and implemented?" → If yes, delete it.
+
+**Exception**: Constraints driven by safety or compliance (e.g., "Do not use RunService:Stop() — it crashes Studio") describe current restrictions and should be kept.
+
 ## Important Constraints
 - Keep total MCP tools under 100 and ensure docs do not imply otherwise.
 - Do not write tool count numbers (72, 140, 132, etc.) in any user-facing text or manifests. This includes README, marketplace.json, plugin.json, CHANGELOG, and Gumroad descriptions. Tool/action counts change frequently during development and stale numbers mislead users.
